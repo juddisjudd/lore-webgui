@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # A new release waits a week before Dependabot proposes it, so a compromised version has time to be caught and pulled.
+    cooldown:
+      default-days: 7
+    groups:
+      effect:
+        patterns: ["effect", "@effect/*"]
+      svelte:
+        patterns: ["svelte", "svelte-check", "@sveltejs/*", "vite"]
+      grpc:
+        patterns: ["@bufbuild/*", "@connectrpc/*"]
+      fonts:
+        patterns: ["@fontsource-variable/*"]
+      minor-and-patch:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday

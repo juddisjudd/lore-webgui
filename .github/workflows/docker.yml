@@ -9,6 +9,7 @@ on:
       - "docs/**"
       - "LICENSE"
       - ".github/ISSUE_TEMPLATE/**"
+      - ".github/dependabot.yml"
   pull_request:
     paths-ignore: *docs-only
   workflow_dispatch:
