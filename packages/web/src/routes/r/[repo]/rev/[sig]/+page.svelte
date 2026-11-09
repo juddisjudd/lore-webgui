@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RevisionRef } from '@lore-webui/api';
 	import BranchDialog from '#lib/BranchDialog.svelte';
-	import ChangeItem from '#lib/ChangeItem.svelte';
+	import ChangeList from '#lib/ChangeList.svelte';
 	import { ago, author, firstLine, short, when } from '#lib/format.ts';
 	import { withRef } from '#lib/links.ts';
 	import Sigil from '#lib/Sigil.svelte';
@@ -18,19 +18,6 @@
 	const body = $derived(rev.message.slice(rev.message.indexOf('\n') + 1).trim());
 	const hasBody = $derived(rev.message.includes('\n') && body !== '');
 
-	const visible = $derived(
-		data.changes.changes.filter(
-			(c) =>
-				c.action !== 'unchanged' &&
-				!(c.kind === 'directory' && data.changes.changes.some((other) => other.path.startsWith(`${c.path}/`)))
-		)
-	);
-	const counts = $derived({
-		added: visible.filter((c) => c.action === 'added').length,
-		modified: visible.filter((c) => c.action === 'modified' || c.action === 'moved' || c.action === 'copied').length,
-		deleted: visible.filter((c) => c.action === 'deleted').length
-	});
-	const autoOpen = $derived(visible.length <= 5);
 
 	const browse = $derived(
 		withRef(`/r/${data.repo.id}/files`, {
@@ -97,33 +84,18 @@
 		</details>
 	{/if}
 
-	<section class="changes" aria-labelledby="changes-title">
-		<div class="changes-head">
-			<h3 id="changes-title">
-				{visible.length === 1 ? '1 change' : `${visible.length} changes`}
-				{#if data.changes.from && data.changes.from.signature !== rev.parent?.signature}
-					<span class="muted">since <a class="mono" href="/r/{data.repo.id}/rev/{data.changes.from.signature}">{short(data.changes.from.signature)}</a></span>
-				{/if}
-			</h3>
-			<span class="counts">
-				{#if counts.added}<span class="add">{counts.added} added</span>{/if}
-				{#if counts.modified}<span class="mod">{counts.modified} changed</span>{/if}
-				{#if counts.deleted}<span class="del">{counts.deleted} deleted</span>{/if}
-			</span>
-		</div>
-		{#if visible.length === 0}
-			<p class="none muted">No file changes in this revision.</p>
-		{:else}
-			<ul>
-				{#each visible as change (change.path)}
-					<ChangeItem repo={data.repo.id} {change} open={autoOpen} />
-				{/each}
-			</ul>
-		{/if}
-		{#if data.changes.conflicts.length > 0}
-			<p class="conflicts">{data.changes.conflicts.length} conflicting paths between the merged sides.</p>
-		{/if}
-	</section>
+	<ChangeList repo={data.repo.id} changes={data.changes.changes} empty="No file changes in this revision.">
+		{#snippet note()}
+			{#if data.changes.from && data.changes.from.signature !== rev.parent?.signature}
+				<span class="muted">since <a class="mono" href="/r/{data.repo.id}/rev/{data.changes.from.signature}">{short(data.changes.from.signature)}</a></span>
+			{/if}
+		{/snippet}
+		{#snippet footer()}
+			{#if data.changes.conflicts.length > 0}
+				<p class="conflicts">{data.changes.conflicts.length} conflicting paths between the merged sides.</p>
+			{/if}
+		{/snippet}
+	</ChangeList>
 </article>
 
 {#if owner}
@@ -234,59 +206,8 @@
 		overflow-wrap: anywhere;
 	}
 
-	.changes {
-		border: 1px solid var(--line);
-		border-radius: var(--radius-m);
-		background: var(--surface);
-		overflow: hidden;
-	}
-
-	.changes-head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.5rem 1rem;
-		padding: 0.75rem 1rem;
-		border-bottom: 1px solid var(--line);
-		background: var(--raised);
-	}
-
-	h3 {
-		font-size: var(--step-0);
-	}
-
-	.counts {
-		display: flex;
-		gap: 1rem;
-		font-size: var(--step--1);
-		font-weight: 600;
-	}
-
-	.add {
-		color: var(--add);
-	}
-
-	.mod {
-		color: var(--muted);
-	}
-
-	.del {
-		color: var(--del);
-	}
-
-	ul {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-	}
-
-	.none,
 	.conflicts {
 		padding: 1rem;
-	}
-
-	.conflicts {
 		border-top: 1px solid var(--line);
 		color: var(--text);
 	}

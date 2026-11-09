@@ -146,6 +146,22 @@ export const RevisionDiff = Schema.Struct({
 })
 export type RevisionDiff = typeof RevisionDiff.Type
 
+export const CompareStatus = Schema.Literals(["identical", "ahead", "behind", "diverged", "unrelated", "empty"])
+export type CompareStatus = typeof CompareStatus.Type
+
+export const BranchComparison = Schema.Struct({
+	base: Branch,
+	head: Branch,
+	status: CompareStatus,
+	mergeBase: Schema.NullOr(RevisionRef),
+	ahead: Schema.NullOr(Schema.Number),
+	behind: Schema.NullOr(Schema.Number),
+	revisions: Schema.Array(Revision),
+	changes: Schema.Array(Change),
+	conflicts: Schema.Array(Conflict)
+})
+export type BranchComparison = typeof BranchComparison.Type
+
 export const DiffLine = Schema.Struct({
 	kind: Schema.Literals(["context", "add", "del"]),
 	text: Schema.String,

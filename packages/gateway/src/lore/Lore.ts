@@ -51,6 +51,7 @@ export interface LoreService {
 		signature: string
 	) => Effect.Effect<ReadonlyArray<{ readonly path: string; readonly size: number }>, LoreError>
 	readonly changes: (repo: string, signature: string, against?: string) => Effect.Effect<Domain.RevisionDiff, LoreError>
+	readonly compare: (repo: string, base: string, head: string) => Effect.Effect<Domain.BranchComparison, LoreError>
 	readonly content: (repo: string, address: string, request?: ContentRequest) => Effect.Effect<Response, LoreError>
 }
 
@@ -387,6 +388,83 @@ const make = Effect.gen(function* () {
 		return result
 	})
 
+	const compare = Effect.fn("Lore.compare")(function* (repo: string, baseName: string, headName: string) {
+		const repoId = yield* id(repo, "repository id")
+		const [base, head] = yield* Effect.all([getBranch(repo, baseName), getBranch(repo, headName)], { concurrency: 2 })
+		const result = (
+			status: Domain.CompareStatus,
+			fields: Partial<Omit<Domain.BranchComparison, "base" | "head" | "status">> = {}
+		): Domain.BranchComparison => ({
+			base,
+			head,
+			status,
+			mergeBase: null,
+			ahead: null,
+			behind: null,
+			revisions: [],
+			changes: [],
+			conflicts: [],
+			...fields
+		})
+		if (!base.latest || !head.latest) return result("empty")
+		if (base.latest === head.latest) return result("identical", { ahead: 0, behind: 0 })
+		const baseLatest = base.latest
+		const headLatest = head.latest
+		const [baseTip, headTip] = yield* Effect.all(
+			[revisionInfo(repoId, yield* signature(baseLatest)), revisionInfo(repoId, yield* signature(headLatest))],
+			{ concurrency: 2 }
+		)
+
+		const isAncestor = (older: Domain.Revision, newer: Domain.Revision, newerBranch: Domain.Branch) =>
+			Effect.gen(function* () {
+				if (older.branchId === newer.branchId) return older.number <= newer.number
+				const point = newerBranch.stack.find((p) => p.branchId === older.branchId)
+				if (!point) return false
+				const fork = yield* revisionInfo(repoId, yield* signature(point.signature))
+				return older.number <= fork.number
+			})
+
+		const toRef = (r: Domain.Revision): Domain.RevisionRef => ({
+			signature: r.signature,
+			branchId: r.branchId,
+			number: r.number
+		})
+
+		const headRevisionsSince = (mergeBase: Domain.RevisionRef) =>
+			history(repo, head.id).pipe(Effect.map((page) => page.items.filter((r) => r.number > mergeBase.number)))
+
+		if (yield* isAncestor(baseTip, headTip, head)) {
+			const [diff, revisions] = yield* Effect.all(
+				[changes(repo, headLatest, baseLatest), headRevisionsSince(toRef(baseTip))],
+				{ concurrency: 2 }
+			)
+			return result("ahead", {
+				mergeBase: toRef(baseTip),
+				ahead: headTip.number - baseTip.number,
+				behind: 0,
+				revisions,
+				changes: diff.changes
+			})
+		}
+		if (yield* isAncestor(headTip, baseTip, base)) {
+			return result("behind", { mergeBase: toRef(headTip), ahead: 0, behind: baseTip.number - headTip.number })
+		}
+		const merge = yield* changes(repo, baseLatest, headLatest)
+		if (!merge.base) {
+			const forward = yield* changes(repo, headLatest, baseLatest)
+			return result("unrelated", { changes: forward.changes })
+		}
+		const mergeBase = merge.base
+		return result("diverged", {
+			mergeBase,
+			ahead: headTip.number - mergeBase.number,
+			behind: baseTip.number - mergeBase.number,
+			revisions: yield* headRevisionsSince(mergeBase),
+			changes: merge.changes,
+			conflicts: merge.conflicts
+		})
+	})
+
 	const content = Effect.fn("Lore.content")(function* (repo: string, address: string, request: ContentRequest = {}) {
 		yield* id(repo, "repository id")
 		if (!convert.parseAddress(address)) return yield* badRequest(`Invalid content address: ${address}`)
@@ -423,6 +501,7 @@ const make = Effect.gen(function* () {
 		tree,
 		files,
 		changes,
+		compare,
 		content
 	})
 })

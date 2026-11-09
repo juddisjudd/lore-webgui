@@ -2,6 +2,7 @@ import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api"
 import {
 	Branch,
+	BranchComparison,
 	CreateBranch,
 	CreateRepository,
 	FileDiff,
@@ -35,6 +36,12 @@ export class RepositoriesApi extends HttpApiGroup.make("repositories")
 			params: repo,
 			query: { branch: Schema.optional(Schema.String) },
 			success: RepositoryStats,
+			error: LoreErrors
+		}),
+		HttpApiEndpoint.get("compare", "/:repo/compare", {
+			params: repo,
+			query: { base: Schema.String, head: Schema.String },
+			success: BranchComparison,
 			error: LoreErrors
 		})
 	)

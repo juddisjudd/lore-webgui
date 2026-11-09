@@ -47,7 +47,8 @@ const RepositoryHandlers = HttpApiBuilder.group(
 			create: ({ payload }) => lore.createRepository(payload),
 			get: ({ params }) => lore.getRepository(params.repo),
 			delete: ({ params }) => lore.deleteRepository(params.repo),
-			stats: ({ params, query }) => stats.forBranch(params.repo, query.branch)
+			stats: ({ params, query }) => stats.forBranch(params.repo, query.branch),
+			compare: ({ params, query }) => lore.compare(params.repo, query.base, query.head)
 		})
 	})
 )

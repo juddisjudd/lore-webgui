@@ -6,7 +6,12 @@
 	import Glyph from '#lib/Glyph.svelte';
 	import { glyphFor } from '#lib/glyphs.ts';
 
-	let { repo, change, open = false }: { repo: string; change: Change; open?: boolean } = $props();
+	let {
+		repo,
+		change,
+		open = false,
+		label
+	}: { repo: string; change: Change; open?: boolean; label?: string } = $props();
 
 	const markers = { added: 'A', deleted: 'D', modified: 'M', moved: 'R', copied: 'C', unchanged: '=' } as const;
 	const name = $derived(change.path.slice(change.path.lastIndexOf('/') + 1));
@@ -38,6 +43,7 @@
 	</span>
 	{#if change.automerged}<span class="flag">Auto-merged</span>{/if}
 	{#if change.linked}<span class="flag">Linked repository</span>{/if}
+	{#if label}<span class="flag mono" translate="no">{label}</span>{/if}
 {/snippet}
 
 <li class={['change', change.action]}>

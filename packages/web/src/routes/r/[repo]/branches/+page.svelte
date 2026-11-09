@@ -21,6 +21,9 @@
 			? `/r/${data.repo.id}/files`
 			: `/r/${data.repo.id}/files?branch=${encodeURIComponent(branch.name)}`;
 
+	const compareUrl = (branch: Branch) =>
+		`/r/${data.repo.id}/compare?${new URLSearchParams({ base: data.repo.defaultBranchName, head: branch.name })}`;
+
 	function askDelete(branch: Branch) {
 		failure = null;
 		doomed = branch;
@@ -97,6 +100,9 @@
 					</td>
 					<td class="row-actions">
 						{#if !branch.deleted && branch.id !== data.repo.defaultBranchId}
+							<a class="button" href={compareUrl(branch)} aria-label="Compare {branch.name} with {data.repo.defaultBranchName}">
+								Compare
+							</a>
 							<button class="button danger" onclick={() => askDelete(branch)} aria-label="Delete {branch.name}">Delete</button>
 						{/if}
 					</td>
@@ -226,5 +232,10 @@
 	.row-actions {
 		text-align: right;
 		width: 1%;
+		white-space: nowrap;
+	}
+
+	.row-actions .button + .button {
+		margin-left: 0.5rem;
 	}
 </style>

@@ -14,7 +14,7 @@
 	const tabs = $derived([
 		{ key: '1', label: 'Files', href: withRef(`${base}/files`, { branch: branchQuery, rev: data.rev }), match: [`${base}/files`] },
 		{ key: '2', label: 'History', href: withRef(`${base}/history`, { branch: branchQuery }), match: [`${base}/history`, `${base}/rev`] },
-		{ key: '3', label: 'Branches', href: `${base}/branches`, match: [`${base}/branches`] },
+		{ key: '3', label: 'Branches', href: `${base}/branches`, match: [`${base}/branches`, `${base}/compare`] },
 		{
 			key: '4',
 			label: 'Locks',
