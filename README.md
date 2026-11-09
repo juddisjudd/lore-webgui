@@ -77,30 +77,33 @@ The gateway also publishes OpenAPI documentation at `/api/docs`.
 
 ## Run with Docker
 
-The image contains the built web app and the gateway bundled into a single file. It runs as a non-root user and reports its status through a Docker health check on `/api/health`.
+Images for `linux/amd64` and `linux/arm64` are published to the GitHub Container Registry. Each image contains the built web app and the gateway bundled into a single file. It runs as a non-root user and reports its status through a Docker health check on `/api/health`.
 
-1. Build and start the container:
+1. Start the container:
 
    ```sh
-   LORE_HOST=lore.local docker compose up -d --build
-   ```
-
-   In PowerShell:
-
-   ```powershell
-   $env:LORE_HOST = "lore.local"; docker compose up -d --build
+   docker run -d -p 7337:7337 -e LORE_HOST=lore.local ghcr.io/juddisjudd/lore-webgui:latest
    ```
 
 2. Open <http://localhost:7337>.
 
-Leave out `LORE_HOST` to reach a Lore server running on the Docker host itself. Compose passes `PORT` and `LORE_TOKEN` through as well.
+Each push to `main` publishes `latest` and a tag for the short commit hash. Each version tag such as `v0.1.0` publishes `0.1.0` and `0.1`.
 
-Without Compose:
+### Docker Compose
+
+From a clone of this repository:
 
 ```sh
-docker build -t lore-webgui .
-docker run -d -p 7337:7337 -e LORE_HOST=lore.local lore-webgui
+LORE_HOST=lore.local docker compose up -d
 ```
+
+In PowerShell:
+
+```powershell
+$env:LORE_HOST = "lore.local"; docker compose up -d
+```
+
+Compose pulls the published image. Add `--build` to build it from your local source instead. Leave out `LORE_HOST` to reach a Lore server running on the Docker host itself. Compose passes `PORT` and `LORE_TOKEN` through as well.
 
 ## Configuration
 

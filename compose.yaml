@@ -1,7 +1,7 @@
 services:
   lore-webgui:
+    image: ghcr.io/juddisjudd/lore-webgui:latest
     build: .
-    image: lore-webgui
     ports:
       - "${PORT:-7337}:7337"
     environment:
