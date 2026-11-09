@@ -190,7 +190,7 @@ The gateway reads these environment variables:
 | `LORE_HOST` | `localhost` | Host of the Lore server. Sets both URLs below. |
 | `LORE_GRPC_URL` | `http://$LORE_HOST:41337` | Lore gRPC endpoint. |
 | `LORE_HTTP_URL` | `http://$LORE_HOST:41339` | Lore HTTP endpoint, used for file content. |
-| `LORE_TOKEN` | none | Bearer token to send when the Lore server requires authentication. |
+| `LORE_TOKEN` | none | Token for a Lore server that has `[server.auth]`, which rejects requests without one. Leave it unset for any other Lore server: when it is set, the gateway sends it in place of each person's name, and Lore records every action under the token's identity. |
 | `PORT` | `7337` | Port the gateway listens on. |
 | `STATIC_DIR` | `packages/web/build` | Folder of the built web app. |
 | `MAX_DIFF_BYTES` | `2097152` | Files larger than this are not diffed. |
