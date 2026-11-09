@@ -1,5 +1,7 @@
 # Lore Web UI
 
+![Lore Web UI: a web interface for Lore, the open source version control system from Epic Games](docs/og-image.png)
+
 [![Build status](https://img.shields.io/github/actions/workflow/status/juddisjudd/lore-webgui/docker.yml?branch=main&style=flat-square&label=build&labelColor=000000)](https://github.com/juddisjudd/lore-webgui/actions/workflows/docker.yml)
 [![License: MIT](https://img.shields.io/github/license/juddisjudd/lore-webgui?style=flat-square&labelColor=000000&color=555555)](LICENSE)
 [![Container image on GHCR](https://img.shields.io/badge/image-ghcr.io-555555?style=flat-square&labelColor=000000&logo=docker&logoColor=white)](https://github.com/juddisjudd/lore-webgui/pkgs/container/lore-webgui)
