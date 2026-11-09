@@ -1,0 +1,229 @@
+@import '@fontsource-variable/atkinson-hyperlegible-next';
+@import '@fontsource-variable/atkinson-hyperlegible-mono';
+
+:root {
+	color-scheme: light dark;
+
+	--bg: light-dark(#ffffff, #000000);
+	--surface: light-dark(#fafafa, #0c0c0c);
+	--raised: light-dark(#f0f0f0, #181818);
+	--line: light-dark(#e4e4e4, #242424);
+	--line-strong: light-dark(#c8c8c8, #3d3d3d);
+	--text: light-dark(#000000, #f2f2f2);
+	--muted: light-dark(#6e6e6e, #8c8c8c);
+	--add: light-dark(#1b7a43, #72c891);
+	--add-wash: light-dark(#e9f6ee, #0f2217);
+	--del: light-dark(#bf3a33, #ea7a72);
+	--del-wash: light-dark(#fbebea, #2a1110);
+
+	--font-ui: 'Atkinson Hyperlegible Next Variable', system-ui, sans-serif;
+	--font-mono: 'Atkinson Hyperlegible Mono Variable', ui-monospace, monospace;
+
+	--step--1: 0.8125rem;
+	--step-0: 0.9375rem;
+	--step-1: 1.125rem;
+	--step-2: 1.375rem;
+	--step-3: 2rem;
+
+	--radius-s: 0;
+	--radius-m: 0;
+	--page: min(1180px, 100% - 2rem);
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-ui);
+	font-size: 100%;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	font-size: var(--step-0);
+	line-height: 1.55;
+	min-height: 100dvh;
+	font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-family: var(--font-mono);
+	font-weight: 700;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
+	text-wrap: balance;
+}
+
+p {
+	margin: 0;
+	text-wrap: pretty;
+}
+
+a {
+	color: inherit;
+	text-decoration-color: var(--line-strong);
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.22em;
+}
+
+a:hover {
+	text-decoration-color: currentColor;
+}
+
+code,
+kbd,
+pre,
+.mono {
+	font-family: var(--font-mono);
+	font-size: 0.92em;
+}
+
+kbd {
+	display: inline-grid;
+	place-items: center;
+	min-width: 1.35rem;
+	height: 1.35rem;
+	padding: 0 0.3rem;
+	border: 1px solid var(--line-strong);
+	color: var(--muted);
+	font-size: 0.72rem;
+	line-height: 1;
+}
+
+:focus-visible {
+	outline: 2px solid var(--text);
+	outline-offset: 2px;
+}
+
+::selection {
+	background: var(--text);
+	color: var(--bg);
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+.button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	min-height: 2.25rem;
+	padding: 0 0.95rem;
+	border: 1px solid var(--line-strong);
+	background: transparent;
+	cursor: pointer;
+	text-decoration: none;
+	white-space: nowrap;
+	font-weight: 500;
+	touch-action: manipulation;
+}
+
+.button:hover {
+	border-color: var(--text);
+}
+
+.button.primary {
+	background: var(--text);
+	border-color: var(--text);
+	color: var(--bg);
+}
+
+.button.primary:hover {
+	background: var(--muted);
+	border-color: var(--muted);
+}
+
+.button.danger {
+	color: var(--del);
+	border-color: var(--line-strong);
+}
+
+.button.danger:hover {
+	border-color: var(--del);
+}
+
+.button.danger.solid {
+	background: var(--del);
+	border-color: var(--del);
+	color: var(--bg);
+}
+
+.button:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.field {
+	display: grid;
+	gap: 0.35rem;
+}
+
+.field > span {
+	font-family: var(--font-mono);
+	font-size: var(--step--1);
+	color: var(--muted);
+}
+
+.input {
+	min-height: 2.4rem;
+	padding: 0.4rem 0.7rem;
+	border: 1px solid var(--line-strong);
+	border-radius: 0;
+	background: var(--bg);
+}
+
+.input:hover {
+	border-color: var(--muted);
+}
+
+select.input,
+select.input option {
+	background-color: var(--bg);
+	color: var(--text);
+}
+
+.input:focus-visible {
+	outline-offset: 0;
+	border-color: var(--text);
+}
+
+.error-text {
+	color: var(--del);
+	font-size: var(--step--1);
+}
+
+.muted {
+	color: var(--muted);
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

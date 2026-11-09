@@ -1,0 +1,7 @@
+node_modules
+packages/web/build
+packages/web/.svelte-kit
+.env
+.env.*
+!.env.example
+*.tmp.ts
