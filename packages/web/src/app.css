@@ -101,8 +101,26 @@ kbd {
 }
 
 :focus-visible {
-	outline: 2px solid var(--text);
-	outline-offset: 2px;
+	outline: none;
+}
+
+:where(a, button, summary, [role='combobox']):focus-visible {
+	background-color: var(--text) !important;
+	color: var(--bg) !important;
+	text-decoration-color: currentColor;
+}
+
+a:not(.button):focus-visible {
+	outline: 5px solid var(--text);
+	outline-offset: -1px;
+}
+
+:where(a, button, summary, select, label, [role='button'], [role='option'], [role='combobox']):not(:disabled) {
+	cursor: pointer;
+}
+
+:where(button, select, input, [role='combobox']):disabled {
+	cursor: not-allowed;
 }
 
 ::selection {
@@ -163,6 +181,25 @@ textarea {
 	color: var(--bg);
 }
 
+.button:focus-visible {
+	border-color: var(--text);
+}
+
+.button.primary:focus-visible {
+	background-color: var(--bg) !important;
+	color: var(--text) !important;
+}
+
+.button.danger:focus-visible {
+	background-color: var(--del) !important;
+	border-color: var(--del);
+}
+
+.button.danger.solid:focus-visible {
+	background-color: var(--bg) !important;
+	color: var(--del) !important;
+}
+
 .button:disabled {
 	opacity: 0.4;
 	cursor: not-allowed;
@@ -198,8 +235,7 @@ select.input option {
 }
 
 .input:focus-visible {
-	outline-offset: 0;
-	border-color: var(--text);
+	background-color: var(--raised);
 }
 
 .error-text {

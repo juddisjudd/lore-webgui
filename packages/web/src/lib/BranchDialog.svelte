@@ -4,6 +4,7 @@
 	import { attempt } from '#lib/api.ts';
 	import { short } from '#lib/format.ts';
 	import Modal from '#lib/Modal.svelte';
+	import Select from '#lib/Select.svelte';
 	import { nameProblem } from '#lib/names.ts';
 
 	let {
@@ -57,14 +58,16 @@
 		{#if at}
 			<p class="muted">Starts at revision <code>{short(at)}</code> of {from.name}.</p>
 		{:else}
-			<label class="field">
-				<span>Starts from the latest revision of</span>
-				<select class="input mono" name="source" bind:value={source}>
-					{#each live as branch (branch.id)}
-						<option value={branch.id}>{branch.name}</option>
-					{/each}
-				</select>
-			</label>
+			<div class="field">
+				<span aria-hidden="true">Starts from the latest revision of</span>
+				<Select
+					label="Starts from the latest revision of"
+					mono
+					wide
+					bind:value={source}
+					options={live.map((branch) => ({ value: branch.id, label: branch.name }))}
+				/>
+			</div>
 		{/if}
 		{#if problem || failure}
 			<p class="error-text" role="alert">{problem ?? failure}</p>

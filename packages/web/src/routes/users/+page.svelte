@@ -5,6 +5,7 @@
 	import { generatePassword } from '#lib/auth.ts';
 	import { ago, when } from '#lib/format.ts';
 	import Modal from '#lib/Modal.svelte';
+	import Select from '#lib/Select.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -134,15 +135,13 @@
 						</span>
 					</td>
 					<td>
-						<select
-							class="input"
-							aria-label="Role for {user.username}"
+						<Select
+							label="Role for {user.username}"
 							value={user.role}
+							options={roles}
 							disabled={self || pending}
-							onchange={(event) => changeRole(user, (event.currentTarget as HTMLSelectElement).value as Role)}
-						>
-							{#each roles as role (role.value)}<option value={role.value}>{role.label}</option>{/each}
-						</select>
+							onchange={(role) => changeRole(user, role)}
+						/>
 					</td>
 					<td class="added">
 						<time datetime={new Date(user.created).toISOString()} title={when(user.created)}>{ago(user.created)}</time>
@@ -177,12 +176,10 @@
 			<span>Username</span>
 			<input class="input mono" bind:value={newName} required autocomplete="off" spellcheck="false" />
 		</label>
-		<label class="field">
-			<span>Role</span>
-			<select class="input" bind:value={newRole}>
-				{#each roles as role (role.value)}<option value={role.value}>{role.label}</option>{/each}
-			</select>
-		</label>
+		<div class="field">
+			<span aria-hidden="true">Role</span>
+			<Select label="Role" wide bind:value={newRole} options={roles} />
+		</div>
 		<div class="field">
 			<span>Temporary password</span>
 			<div class="secret">
@@ -306,9 +303,9 @@
 		color: var(--muted);
 	}
 
-	select {
-		min-height: 2rem;
-		padding-block: 0.2rem;
+	td :global([role='combobox']) {
+		--select-height: 2rem;
+		min-width: 8rem;
 	}
 
 	.added {

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import ChangeItem from '#lib/ChangeItem.svelte';
 	import ChangeList from '#lib/ChangeList.svelte';
+	import Select from '#lib/Select.svelte';
 	import { ago, author, firstLine, when } from '#lib/format.ts';
 	import Sigil from '#lib/Sigil.svelte';
 	import type { PageProps } from './$types';
@@ -9,7 +10,9 @@
 	let { data }: PageProps = $props();
 
 	const c = $derived(data.comparison);
-	const live = $derived(data.branches.filter((b) => !b.deleted));
+	const branchOptions = $derived(
+		data.branches.filter((b) => !b.deleted).map((b) => ({ value: b.name, label: b.name }))
+	);
 	const showsChanges = $derived(c.status === 'ahead' || c.status === 'diverged' || c.status === 'unrelated');
 	const canMerge = $derived(c.status === 'ahead' || c.status === 'diverged');
 	const mergeCommand = $derived(`lore branch switch ${c.base.name}\nlore branch merge ${c.head.name}`);
@@ -24,8 +27,7 @@
 		return `/r/${data.repo.id}/compare?${query}`;
 	}
 
-	function pick(side: 'base' | 'head', event: Event) {
-		const name = (event.currentTarget as HTMLSelectElement).value;
+	function pick(side: 'base' | 'head', name: string) {
 		void goto(side === 'base' ? compareUrl(name, c.head.name) : compareUrl(c.base.name, name));
 	}
 
@@ -41,19 +43,15 @@
 </svelte:head>
 
 <div class="pick">
-	<label>
-		<span>Base</span>
-		<select class="mono" value={c.base.name} onchange={(event) => pick('base', event)}>
-			{#each live as branch (branch.id)}<option value={branch.name}>{branch.name}</option>{/each}
-		</select>
-	</label>
+	<div class="side">
+		<span aria-hidden="true">Base</span>
+		<Select label="Base branch" mono value={c.base.name} options={branchOptions} onchange={(name) => pick('base', name)} />
+	</div>
 	<span class="arrow" aria-hidden="true">←</span>
-	<label>
-		<span>Compare</span>
-		<select class="mono" value={c.head.name} onchange={(event) => pick('head', event)}>
-			{#each live as branch (branch.id)}<option value={branch.name}>{branch.name}</option>{/each}
-		</select>
-	</label>
+	<div class="side">
+		<span aria-hidden="true">Compare</span>
+		<Select label="Branch to compare" mono value={c.head.name} options={branchOptions} onchange={(name) => pick('head', name)} />
+	</div>
 	<a class="button" href={compareUrl(c.head.name, c.base.name)}>Swap</a>
 </div>
 
@@ -148,20 +146,16 @@
 		margin-bottom: 1rem;
 	}
 
-	label {
+	.side {
 		display: grid;
 		gap: 0.3rem;
 		font-size: var(--step--1);
 		color: var(--muted);
+		--select-height: 2.1rem;
+		--select-max-width: 20rem;
 	}
 
-	select {
-		min-height: 2.1rem;
-		max-width: 20rem;
-		padding: 0 0.6rem;
-		border: 1px solid var(--line-strong);
-		background-color: var(--bg);
-		color: var(--text);
+	.side :global([role='combobox']) {
 		font-size: var(--step-0);
 	}
 

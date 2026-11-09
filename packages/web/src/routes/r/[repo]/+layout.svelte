@@ -2,6 +2,7 @@
 	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import Composition from '#lib/Composition.svelte';
+	import Select from '#lib/Select.svelte';
 	import { withRef } from '#lib/links.ts';
 	import { watchRepository } from '#lib/live.ts';
 	import type { LayoutProps } from './$types';
@@ -23,6 +24,10 @@
 			count: data.locks.ok ? data.locks.value.length : 0
 		}
 	]);
+
+	const branchOptions = $derived(
+		data.branches.filter((b) => !b.deleted).map((b) => ({ value: b.name, label: b.name }))
+	);
 
 	const section = $derived(page.url.pathname.split('/')[3] ?? 'files');
 
@@ -51,8 +56,7 @@
 		};
 	});
 
-	function switchBranch(event: Event) {
-		const name = (event.currentTarget as HTMLSelectElement).value;
+	function switchBranch(name: string) {
 		const target = section === 'history' || section === 'locks' ? section : 'files';
 		const branch = name === data.repo.defaultBranchName ? null : name;
 		void goto(withRef(`${base}/${target}`, { branch }));
@@ -61,7 +65,7 @@
 	function shortcut(event: KeyboardEvent) {
 		if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
 		const target = event.target instanceof Element ? event.target : null;
-		if (target?.closest('input, textarea, select, [contenteditable]') || document.querySelector('dialog[open]')) return;
+		if (target?.closest('input, textarea, select, [contenteditable], [role="combobox"]') || document.querySelector('dialog[open]')) return;
 		const tab = tabs.find((t) => t.key === event.key);
 		if (!tab) return;
 		event.preventDefault();
@@ -85,22 +89,20 @@
 	</div>
 	<Composition repo={data.repo.id} branch={data.branch.id} signature={data.branch.latest} />
 	<div class="controls">
-		<label class="picker">
-			<span class="visually-hidden">Branch</span>
-			<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-				<path
-					d="M5 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm0 3v5m0 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6-8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm0 3c0 2.5-6 2-6 5"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.3"
-				/>
-			</svg>
-			<select class="mono" value={data.branch.name} onchange={switchBranch}>
-				{#each data.branches.filter((b) => !b.deleted) as branch (branch.id)}
-					<option value={branch.name}>{branch.name}</option>
-				{/each}
-			</select>
-		</label>
+		<div class="picker">
+			<Select label="Branch" mono value={data.branch.name} options={branchOptions} onchange={switchBranch}>
+				{#snippet icon()}
+					<svg class="branch-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+						<path
+							d="M5 2.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm0 3v5m0 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6-8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm0 3c0 2.5-6 2-6 5"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.3"
+						/>
+					</svg>
+				{/snippet}
+			</Select>
+		</div>
 		<nav class="tabs" aria-label="Repository">
 			{#each tabs as tab (tab.label)}
 				<a
@@ -149,37 +151,13 @@
 	}
 
 	.picker {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
 		margin-bottom: 0.6rem;
-		padding-left: 0.6rem;
-		border: 1px solid var(--line-strong);
+		--select-height: 2.1rem;
+	}
+
+	.branch-icon {
+		flex: none;
 		color: var(--muted);
-	}
-
-	.picker:hover {
-		border-color: var(--muted);
-	}
-
-	.picker:focus-within {
-		outline: 2px solid var(--text);
-		outline-offset: 2px;
-	}
-
-	select {
-		min-height: 2.1rem;
-		padding: 0 0.6rem 0 0.1rem;
-		border: 0;
-		background-color: var(--bg);
-		color: var(--text);
-		max-width: 22rem;
-		outline: none;
-	}
-
-	option {
-		background-color: var(--bg);
-		color: var(--text);
 	}
 
 	.tabs {
