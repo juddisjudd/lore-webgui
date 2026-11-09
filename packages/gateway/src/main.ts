@@ -7,6 +7,7 @@ import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
 import { Settings } from "./config.ts"
 import { ContentRoutes } from "./http/content.ts"
+import { EventRoutes } from "./http/events.ts"
 import { ApiHandlers } from "./http/handlers.ts"
 import { Lore } from "./lore/Lore.ts"
 import { Stats } from "./lore/Stats.ts"
@@ -39,7 +40,7 @@ const Server = Layer.unwrap(
 		const { port, grpcUrl, httpUrl } = yield* Settings
 		yield* Effect.logInfo(`Lore gRPC ${grpcUrl}, HTTP ${httpUrl}`)
 		yield* Effect.logInfo(`Gateway listening on http://localhost:${port}`)
-		return HttpRouter.serve(Layer.mergeAll(ApiRoutes, DocsRoute, ContentRoutes, StaticRoutes)).pipe(
+		return HttpRouter.serve(Layer.mergeAll(ApiRoutes, DocsRoute, ContentRoutes, EventRoutes, StaticRoutes)).pipe(
 			Layer.provide(BunHttpServer.layer({ port }))
 		)
 	})

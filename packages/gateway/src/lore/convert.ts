@@ -1,6 +1,7 @@
 import { timestampMs } from "@bufbuild/protobuf/wkt"
 import type * as Domain from "@lore-webui/api"
-import type { Lock } from "../gen/lock_pb.ts"
+import type { Lock, Resource } from "../gen/lock_pb.ts"
+import type { Event } from "../gen/lore_notification_pb.ts"
 import type { Address, Branch, Repository, RevisionIdentifier } from "../gen/lore/model/v1/model_pb.ts"
 import {
 	Action,
@@ -65,7 +66,36 @@ export const fileLock = (lock: Lock): Domain.FileLock | null =>
 			}
 		: null
 
-export const revisionRef = (signature: Uint8Array, identifier: RevisionIdentifier | undefined): Domain.RevisionRef => ({
+const lockChange = (user: string, resources: ReadonlyArray<Resource>) => ({
+	user,
+	branchIds: [...new Set(resources.map((r) => toHex(r.branch)))],
+	paths: resources.map((r) => r.description)
+})
+
+export const repositoryEvent = ({ event }: Event): Domain.RepositoryEvent | null => {
+	switch (event.case) {
+		case "branchPushed":
+			return {
+				_tag: "BranchPushed",
+				branchId: toHex(event.value.branch),
+				signature: toHex(event.value.revision),
+				number: Number(event.value.revisionNumber),
+				user: event.value.userId
+			}
+		case "branchCreated":
+			return { _tag: "BranchCreated", branchId: toHex(event.value.branch) }
+		case "branchDeleted":
+			return { _tag: "BranchDeleted", branchId: toHex(event.value.branch) }
+		case "resourceLocked":
+			return { _tag: "FilesLocked", ...lockChange(event.value.userId, event.value.resources) }
+		case "resourceUnlocked":
+			return { _tag: "FilesUnlocked", ...lockChange(event.value.userId, event.value.resources) }
+		default:
+			return null
+	}
+}
+
+export const revisionRef =(signature: Uint8Array, identifier: RevisionIdentifier | undefined): Domain.RevisionRef => ({
 	signature: toHex(signature),
 	branchId: identifier ? toHex(identifier.branchId) : "",
 	number: identifier ? Number(identifier.number) : 0

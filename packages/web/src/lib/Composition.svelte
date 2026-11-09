@@ -23,8 +23,9 @@
 	let {
 		repo,
 		branch,
+		signature = null,
 		compact = false
-	}: { repo: string; branch: string; compact?: boolean } = $props();
+	}: { repo: string; branch: string; signature?: string | null; compact?: boolean } = $props();
 
 	const SHADES = [100, 68, 44, 26];
 	const OTHER_SHADE = 12;
@@ -37,7 +38,18 @@
 		return result.ok ? result.value : null;
 	}
 
-	const stats = $derived(fetchStats(repo, branch));
+	let stats = $state.raw<RepositoryStats | null | undefined>(undefined);
+
+	$effect(() => {
+		void signature;
+		let current = true;
+		void fetchStats(repo, branch).then((value) => {
+			if (current) stats = value;
+		});
+		return () => {
+			current = false;
+		};
+	});
 
 	function languages(data: RepositoryStats) {
 		const top = data.code.languages.slice(0, compact ? 3 : SHADES.length);
@@ -77,38 +89,36 @@
 	</ul>
 {/snippet}
 
-{#await stats}
+{#if stats === undefined}
 	{#if !compact}<div class="bar placeholder" aria-hidden="true"></div>{/if}
-{:then data}
-	{#if data && compact}
-		{#if data.code.languages.length > 0 || data.assets.length > 0}
-			<div class="compact">
-				{#if data.code.languages.length > 0}{@render languageBadges(data)}{/if}
-				{#if data.assets.length > 0}{@render assetBadges(data)}{/if}
-			</div>
-		{/if}
-	{:else if data && data.signature}
-		<dl class="composition">
-			<dt>Code</dt>
-			<dd>
-				{#if data.code.languages.length > 0}
-					<div class="bar" role="img" aria-label="Languages by size">
-						{#each languages(data) as item (item.name)}
-							<span style:flex-grow={item.share} style:--shade="{item.shade}%"></span>
-						{/each}
-					</div>
-					{@render languageBadges(data)}
-				{:else}
-					<span class="quiet">No source code</span>
-				{/if}
-			</dd>
-			{#if data.assets.length > 0}
-				<dt>Assets</dt>
-				<dd>{@render assetBadges(data)}</dd>
-			{/if}
-		</dl>
+{:else if stats && compact}
+	{#if stats.code.languages.length > 0 || stats.assets.length > 0}
+		<div class="compact">
+			{#if stats.code.languages.length > 0}{@render languageBadges(stats)}{/if}
+			{#if stats.assets.length > 0}{@render assetBadges(stats)}{/if}
+		</div>
 	{/if}
-{/await}
+{:else if stats && stats.signature}
+	<dl class="composition">
+		<dt>Code</dt>
+		<dd>
+			{#if stats.code.languages.length > 0}
+				<div class="bar" role="img" aria-label="Languages by size">
+					{#each languages(stats) as item (item.name)}
+						<span style:flex-grow={item.share} style:--shade="{item.shade}%"></span>
+					{/each}
+				</div>
+				{@render languageBadges(stats)}
+			{:else}
+				<span class="quiet">No source code</span>
+			{/if}
+		</dd>
+		{#if stats.assets.length > 0}
+			<dt>Assets</dt>
+			<dd>{@render assetBadges(stats)}</dd>
+		{/if}
+	</dl>
+{/if}
 
 <style>
 	.composition {

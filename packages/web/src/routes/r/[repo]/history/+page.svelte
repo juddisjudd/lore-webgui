@@ -7,16 +7,14 @@
 
 	let { data }: PageProps = $props();
 
-	let extra = $derived.by((): Array<Revision> => {
-		void data.page;
-		return [];
-	});
-	let cursor = $derived<string | null>(data.page.older);
+	let older = $state.raw<{ branch: string; items: Array<Revision>; cursor: string | null } | null>(null);
 	let loading = $state(false);
 	let failure = $state<string | null>(null);
 
+	const loaded = $derived(older?.branch === data.branch.id ? older : null);
+	const cursor = $derived(loaded ? loaded.cursor : data.page.older);
 	const items = $derived(
-		[...data.page.items, ...extra].filter(
+		[...data.page.items, ...(loaded?.items ?? [])].filter(
 			(item, index, all) => all.findIndex((other) => other.signature === item.signature) === index
 		)
 	);
@@ -39,16 +37,20 @@
 		loading = true;
 		failure = null;
 		const at = cursor;
+		const branch = data.branch.id;
 		const result = await attempt((client) =>
-			client.branches.history({ params: { repo: data.repo.id, branch: data.branch.id }, query: { cursor: at } })
+			client.branches.history({ params: { repo: data.repo.id, branch }, query: { cursor: at } })
 		);
 		loading = false;
 		if (!result.ok) {
 			failure = result.error.message;
 			return;
 		}
-		extra = [...extra, ...result.value.items];
-		cursor = result.value.older && result.value.older !== at ? result.value.older : null;
+		older = {
+			branch,
+			items: [...items, ...result.value.items],
+			cursor: result.value.older && result.value.older !== at ? result.value.older : null
+		};
 	}
 </script>
 

@@ -119,5 +119,7 @@ export class LoreApi extends HttpApi.make("lore-webui")
 	.annotateMerge(OpenApi.annotations({ title: "Lore Web UI gateway" }))
 {}
 
+export const eventsPath = (repoId: string) => `/api/repositories/${encodeURIComponent(repoId)}/events`
+
 export const contentPath = (repoId: string, address: string) =>
 	`/api/repositories/${encodeURIComponent(repoId)}/content/raw/${encodeURIComponent(address)}`

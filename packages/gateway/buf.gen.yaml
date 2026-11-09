@@ -8,6 +8,8 @@ inputs:
       - ../../../lore/lore-proto/proto/lore/thin_client/v1
       - ../../../lore/lore-proto/proto/lore/environment/v1
       - ../../../lore/lore-proto/proto/lock.proto
+      - ../../../lore/lore-proto/proto/model.proto
+      - ../../../lore/lore-proto/proto/lore_notification.proto
 plugins:
   - local: ["bun", "node_modules/@bufbuild/protoc-gen-es/bin/protoc-gen-es"]
     out: src/gen

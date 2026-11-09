@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import Composition from '#lib/Composition.svelte';
 	import { withRef } from '#lib/links.ts';
+	import { watchRepository } from '#lib/live.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -25,6 +26,31 @@
 
 	const section = $derived(page.url.pathname.split('/')[3] ?? 'files');
 
+	const repoId = $derived(data.repo.id);
+	let visible = $state(document.visibilityState === 'visible');
+	let connectedBefore = false;
+	let pending: ReturnType<typeof setTimeout> | undefined;
+
+	function refreshSoon() {
+		clearTimeout(pending);
+		pending = setTimeout(() => void refreshAll(), 300);
+	}
+
+	$effect(() => {
+		if (!visible) return;
+		const stop = watchRepository(repoId, {
+			onOpen: () => {
+				if (connectedBefore) refreshSoon();
+				connectedBefore = true;
+			},
+			onEvent: refreshSoon
+		});
+		return () => {
+			clearTimeout(pending);
+			stop();
+		};
+	});
+
 	function switchBranch(event: Event) {
 		const name = (event.currentTarget as HTMLSelectElement).value;
 		const target = section === 'history' || section === 'locks' ? section : 'files';
@@ -44,6 +70,7 @@
 </script>
 
 <svelte:window onkeydown={shortcut} />
+<svelte:document onvisibilitychange={() => (visible = document.visibilityState === 'visible')} />
 
 <svelte:head>
 	<title>{data.repo.name} – Lore</title>
@@ -56,7 +83,7 @@
 			<p class="muted">{data.repo.description}</p>
 		{/if}
 	</div>
-	<Composition repo={data.repo.id} branch={data.branch.id} />
+	<Composition repo={data.repo.id} branch={data.branch.id} signature={data.branch.latest} />
 	<div class="controls">
 		<label class="picker">
 			<span class="visually-hidden">Branch</span>

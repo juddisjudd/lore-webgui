@@ -96,6 +96,26 @@ export const FileLock = Schema.Struct({
 })
 export type FileLock = typeof FileLock.Type
 
+const LockChange = {
+	user: Schema.String,
+	branchIds: Schema.Array(Schema.String),
+	paths: Schema.Array(Schema.String)
+}
+
+export const RepositoryEvent = Schema.Union([
+	Schema.TaggedStruct("BranchPushed", {
+		branchId: Schema.String,
+		signature: Schema.String,
+		number: Schema.Number,
+		user: Schema.String
+	}),
+	Schema.TaggedStruct("BranchCreated", { branchId: Schema.String }),
+	Schema.TaggedStruct("BranchDeleted", { branchId: Schema.String }),
+	Schema.TaggedStruct("FilesLocked", LockChange),
+	Schema.TaggedStruct("FilesUnlocked", LockChange)
+])
+export type RepositoryEvent = typeof RepositoryEvent.Type
+
 export const ChangeAction = Schema.Literals(["added", "deleted", "modified", "moved", "copied", "unchanged"])
 export type ChangeAction = typeof ChangeAction.Type
 

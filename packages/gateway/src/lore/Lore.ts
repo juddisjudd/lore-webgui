@@ -2,9 +2,10 @@ import { createClient, encodeBinaryHeader, type Interceptor } from "@connectrpc/
 import { createGrpcTransport } from "@connectrpc/connect-node"
 import { ApiError, type CreateBranch, type CreateRepository } from "@lore-webui/api"
 import type * as Domain from "@lore-webui/api"
-import { Context, Effect, Layer, Option, Redacted } from "effect"
+import { Context, Effect, Layer, Option, Redacted, Stream } from "effect"
 import { Settings } from "../config.ts"
 import { LockService } from "../gen/lock_pb.ts"
+import { NotificationService } from "../gen/lore_notification_pb.ts"
 import { CompressionMode, EnvironmentService } from "../gen/lore/environment/v1/environment_pb.ts"
 import { RepositoryService } from "../gen/lore/repository/v1/repository_pb.ts"
 import { RevisionService } from "../gen/lore/revision/v1/revision_pb.ts"
@@ -40,6 +41,7 @@ export interface LoreService {
 	readonly deleteBranch: (repo: string, branch: string) => Effect.Effect<Domain.Branch, LoreError>
 	readonly history: (repo: string, branch: string, cursor?: string) => Effect.Effect<Domain.HistoryPage, LoreError>
 	readonly locks: (repo: string, branch: string) => Effect.Effect<ReadonlyArray<Domain.FileLock>, LoreError>
+	readonly events: (repo: string) => Stream.Stream<Domain.RepositoryEvent, LoreError>
 	readonly revision: (repo: string, signature: string) => Effect.Effect<Domain.Revision, LoreError>
 	readonly tree: (repo: string, signature: string, path?: string) => Effect.Effect<Domain.TreeListing, LoreError>
 	readonly files: (
@@ -98,6 +100,7 @@ const make = Effect.gen(function* () {
 	const thin = createClient(ThinClientService, transport)
 	const environments = createClient(EnvironmentService, transport)
 	const lockService = createClient(LockService, transport)
+	const notifications = createClient(NotificationService, transport)
 
 	const call = <A>(f: (signal: AbortSignal) => Promise<A>) => Effect.tryPromise({ try: f, catch: fromConnect })
 
@@ -244,6 +247,22 @@ const make = Effect.gen(function* () {
 			.sort((a, b) => a.path.localeCompare(b.path))
 	})
 
+	const events = (repo: string) =>
+		Stream.unwrap(
+			Effect.gen(function* () {
+				const repoId = yield* id(repo, "repository id")
+				const controller = yield* Effect.acquireRelease(
+					Effect.sync(() => new AbortController()),
+					(c) => Effect.sync(() => c.abort())
+				)
+				const subscription = notifications.subscribe({ repository: repoId }, scope(repoId, controller.signal))
+				return Stream.fromAsyncIterable(subscription, fromConnect).pipe(
+					Stream.map(convert.repositoryEvent),
+					Stream.filter((event): event is Domain.RepositoryEvent => event !== null)
+				)
+			})
+		)
+
 	const listDirectory = (repoId: Uint8Array, sig: Uint8Array, path: string) =>
 		collect((signal) =>
 			thin.revisionTree(
@@ -384,6 +403,7 @@ const make = Effect.gen(function* () {
 		deleteBranch,
 		history,
 		locks,
+		events,
 		revision,
 		tree,
 		files,
