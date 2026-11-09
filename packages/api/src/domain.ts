@@ -207,6 +207,7 @@ export const ServerInfo = Schema.Struct({
 	grpcUrl: Schema.String,
 	httpUrl: Schema.String,
 	reachable: Schema.Boolean,
+	version: Schema.NullOr(Schema.String),
 	authenticated: Schema.Boolean,
 	compression: Schema.NullOr(Schema.String),
 	oidcIssuer: Schema.NullOr(Schema.String),

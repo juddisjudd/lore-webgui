@@ -2,8 +2,9 @@ import { createClient, encodeBinaryHeader, type Interceptor } from "@connectrpc/
 import { createGrpcTransport } from "@connectrpc/connect-node"
 import { ApiError, type CreateBranch, type CreateRepository } from "@lore-webui/api"
 import type * as Domain from "@lore-webui/api"
-import { Context, Effect, Layer, Option, Redacted, Stream } from "effect"
+import { Cache, Context, Duration, Effect, Exit, Layer, Option, Redacted, Stream } from "effect"
 import { Settings } from "../config.ts"
+import { AdminService } from "../gen/admin_pb.ts"
 import { LockService } from "../gen/lock_pb.ts"
 import { NotificationService } from "../gen/lore_notification_pb.ts"
 import { CompressionMode, EnvironmentService } from "../gen/lore/environment/v1/environment_pb.ts"
@@ -28,6 +29,7 @@ export interface ContentRequest {
 
 export interface LoreService {
 	readonly environment: Effect.Effect<EnvironmentInfo, LoreError>
+	readonly serverVersion: Effect.Effect<string | null, LoreError>
 	readonly listRepositories: Effect.Effect<ReadonlyArray<Domain.Repository>, LoreError>
 	readonly getRepository: (idOrName: string) => Effect.Effect<Domain.Repository, LoreError>
 	readonly createRepository: (input: CreateRepository) => Effect.Effect<Domain.Repository, LoreError>
@@ -101,6 +103,7 @@ const make = Effect.gen(function* () {
 	const environments = createClient(EnvironmentService, transport)
 	const lockService = createClient(LockService, transport)
 	const notifications = createClient(NotificationService, transport)
+	const admin = createClient(AdminService, transport)
 
 	const call = <A>(f: (signal: AbortSignal) => Promise<A>) => Effect.tryPromise({ try: f, catch: fromConnect })
 
@@ -122,6 +125,17 @@ const make = Effect.gen(function* () {
 			oidcIssuer: env?.oidc?.issuer || null
 		}))
 	)
+
+	const versionCache = yield* Cache.makeWith(
+		(_: "version") =>
+			call((signal) => admin.serverInfo({}, { signal })).pipe(
+				Effect.map(({ version }) => version || null),
+				Effect.catchTag("NotSupported", () => Effect.succeed(null))
+			),
+		{ capacity: 1, timeToLive: (exit) => (Exit.isSuccess(exit) ? Duration.minutes(5) : Duration.zero) }
+	)
+
+	const serverVersion = Cache.get(versionCache, "version")
 
 	const listRepositories = collect((signal) => repositories.repositoryList({}, { signal })).pipe(
 		Effect.map((items) =>
@@ -393,6 +407,7 @@ const make = Effect.gen(function* () {
 
 	return Lore.of({
 		environment,
+		serverVersion,
 		listRepositories,
 		getRepository,
 		createRepository,

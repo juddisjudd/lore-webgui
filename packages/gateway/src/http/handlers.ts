@@ -20,12 +20,18 @@ const SystemHandlers = HttpApiBuilder.group(
 		return handlers.handleAll({
 			health: () => Effect.void,
 			server: () =>
-				lore.environment.pipe(
-					Effect.match({
-						onFailure: (error) => ({ ...base, reachable: false, compression: null, oidcIssuer: null, error: error.message }),
-						onSuccess: (env) => ({ ...base, reachable: true, ...env, error: null })
-					})
-				)
+				Effect.all(
+					[
+						lore.environment.pipe(
+							Effect.match({
+								onFailure: (error) => ({ reachable: false, compression: null, oidcIssuer: null, error: error.message }),
+								onSuccess: (env) => ({ reachable: true, ...env, error: null })
+							})
+						),
+						lore.serverVersion.pipe(Effect.orElseSucceed(() => null))
+					],
+					{ concurrency: 2 }
+				).pipe(Effect.map(([status, version]) => ({ ...base, ...status, version })))
 		})
 	})
 )

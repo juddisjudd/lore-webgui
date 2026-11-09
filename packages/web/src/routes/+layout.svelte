@@ -47,7 +47,12 @@
 
 	<footer class="foot">
 		<div class="inner">
-			<span translate="no">lore web ui <span class="version">{__APP_VERSION__}</span></span>
+			<span class="versions" translate="no">
+				<span>lore web ui <span class="version">{__APP_VERSION__}</span></span>
+				{#if data.server.reachable && data.server.version}
+					<span>lore server <span class="version">{data.server.version}</span></span>
+				{/if}
+			</span>
 			<nav aria-label="Resources">
 				<a href="/api/docs" data-sveltekit-reload>API docs</a>
 				<a href="https://epicgames.github.io/lore/" rel="external">Lore docs</a>
@@ -161,6 +166,12 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem 2rem;
+	}
+
+	.versions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.5rem;
 	}
 
 	.version {
