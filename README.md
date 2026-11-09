@@ -107,18 +107,6 @@ Images for `linux/amd64` and `linux/arm64` are published to the GitHub Container
 
 Keep the volume at `/data`. It holds the accounts database, and without it the accounts are lost each time the container is recreated.
 
-### Update a container from a version without accounts
-
-Newer images require sign-in. To update a container that runs an older image:
-
-1. Pull the new image: `docker pull ghcr.io/juddisjudd/lore-webgui:latest`
-2. Remove the old container: `docker rm -f lore-webgui`
-3. Start it again with the volume at `/data`, as in step 1 above.
-4. Run `docker logs lore-webgui` and copy the setup code.
-5. Open the web UI, enter the code and create the admin.
-
-To see who did what in Lore, also set `trust_unsigned_identity = true` on the Lore server, as [Names in Lore](#names-in-lore) describes.
-
 Each push to `main` publishes `latest` and a tag for the short commit hash. Each version tag such as `v0.1.0` publishes `0.1.0` and `0.1`.
 
 ### Docker Compose
