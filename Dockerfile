@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM oven/bun:1.4.0 AS build
+FROM --platform=$BUILDPLATFORM oven/bun:1.4.4 AS build
 WORKDIR /app
 
 COPY package.json bun.lock ./
@@ -13,7 +13,7 @@ COPY . .
 RUN cd packages/web && bun --bun x svelte-kit sync && bun --bun x vite build
 RUN cd packages/gateway && bun run bundle
 
-FROM oven/bun:1.4.0-distroless
+FROM oven/bun:1.4.4-distroless
 WORKDIR /app
 
 COPY --from=build /app/packages/gateway/dist/gateway.js ./gateway.js
