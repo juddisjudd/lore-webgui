@@ -1,0 +1,12 @@
+services:
+  lore-webgui:
+    build: .
+    image: lore-webgui
+    ports:
+      - "${PORT:-7337}:7337"
+    environment:
+      LORE_HOST: ${LORE_HOST:-host.docker.internal}
+      LORE_TOKEN: ${LORE_TOKEN:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

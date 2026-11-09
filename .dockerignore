@@ -1,0 +1,11 @@
+**/node_modules
+**/.svelte-kit
+packages/web/build
+packages/gateway/dist
+.git
+docs
+*.md
+.env
+.env.*
+Dockerfile
+compose.yaml

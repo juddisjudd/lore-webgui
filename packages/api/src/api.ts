@@ -1,5 +1,5 @@
 import { Schema } from "effect"
-import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
+import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/http-api"
 import {
 	Branch,
 	CreateBranch,
@@ -18,6 +18,7 @@ import { LoreErrors } from "./errors.ts"
 const repo = { repo: Schema.String }
 
 export class SystemApi extends HttpApiGroup.make("system").add(
+	HttpApiEndpoint.get("health", "/health", { success: HttpApiSchema.NoContent }),
 	HttpApiEndpoint.get("server", "/server", { success: ServerInfo })
 )
 	.prefix("/api")

@@ -1,5 +1,6 @@
 node_modules
 packages/web/build
+packages/gateway/dist
 packages/web/.svelte-kit
 .env
 .env.*

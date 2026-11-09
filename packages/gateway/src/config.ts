@@ -17,7 +17,7 @@ const settings = Effect.gen(function* () {
 	return {
 		grpcUrl: grpcUrl.replace(/\/+$/, ""),
 		httpUrl: httpUrl.replace(/\/+$/, ""),
-		token: yield* Config.option(Config.Redacted("LORE_TOKEN")),
+		token: Option.filter(yield* Config.option(Config.Redacted("LORE_TOKEN")), (t) => Redacted.value(t).trim() !== ""),
 		port: yield* Config.Port("PORT").pipe(Config.withDefault(7337)),
 		staticDir: yield* Config.option(Config.String("STATIC_DIR")),
 		maxDiffBytes: yield* Config.Int("MAX_DIFF_BYTES").pipe(Config.withDefault(2 * 1024 * 1024)),

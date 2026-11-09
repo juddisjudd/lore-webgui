@@ -17,14 +17,16 @@ const SystemHandlers = HttpApiBuilder.group(
 			httpUrl: settings.httpUrl,
 			authenticated: Option.isSome(settings.token)
 		}
-		return handlers.handle("server", () =>
-			lore.environment.pipe(
-				Effect.match({
-					onFailure: (error) => ({ ...base, reachable: false, compression: null, oidcIssuer: null, error: error.message }),
-					onSuccess: (env) => ({ ...base, reachable: true, ...env, error: null })
-				})
-			)
-		)
+		return handlers.handleAll({
+			health: () => Effect.void,
+			server: () =>
+				lore.environment.pipe(
+					Effect.match({
+						onFailure: (error) => ({ ...base, reachable: false, compression: null, oidcIssuer: null, error: error.message }),
+						onSuccess: (env) => ({ ...base, reachable: true, ...env, error: null })
+					})
+				)
+		})
 	})
 )
 

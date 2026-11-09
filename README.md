@@ -75,6 +75,33 @@ The gateway also publishes OpenAPI documentation at `/api/docs`.
 
 3. Open <http://localhost:7337>. One process serves both the app and the API.
 
+## Run with Docker
+
+The image contains the built web app and the gateway bundled into a single file. It runs as a non-root user and reports its status through a Docker health check on `/api/health`.
+
+1. Build and start the container:
+
+   ```sh
+   LORE_HOST=lore.local docker compose up -d --build
+   ```
+
+   In PowerShell:
+
+   ```powershell
+   $env:LORE_HOST = "lore.local"; docker compose up -d --build
+   ```
+
+2. Open <http://localhost:7337>.
+
+Leave out `LORE_HOST` to reach a Lore server running on the Docker host itself. Compose passes `PORT` and `LORE_TOKEN` through as well.
+
+Without Compose:
+
+```sh
+docker build -t lore-webgui .
+docker run -d -p 7337:7337 -e LORE_HOST=lore.local lore-webgui
+```
+
 ## Configuration
 
 The gateway reads these environment variables:

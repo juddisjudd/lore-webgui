@@ -8,7 +8,8 @@
 		"dev": "bun --watch src/main.ts",
 		"start": "bun src/main.ts",
 		"check": "tsc --noEmit -p tsconfig.json",
-		"test": "bun test"
+		"test": "bun test",
+		"bundle": "bun build src/main.ts --target bun --minify-syntax --outfile dist/gateway.js"
 	},
 	"dependencies": {
 		"@bufbuild/protobuf": "2.17.0",
