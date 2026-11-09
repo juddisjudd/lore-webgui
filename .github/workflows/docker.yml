@@ -8,6 +8,7 @@ on:
       - "**.md"
       - "docs/**"
       - "LICENSE"
+      - ".github/ISSUE_TEMPLATE/**"
   pull_request:
     paths-ignore: *docs-only
   workflow_dispatch:

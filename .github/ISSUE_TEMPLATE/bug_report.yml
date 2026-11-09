@@ -1,0 +1,65 @@
+name: Bug report
+description: Something in the web UI or gateway is broken.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for problems in Lore Web UI. Report bugs in the Lore server or CLI to [EpicGames/lore](https://github.com/EpicGames/lore/issues).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Include the exact error message if one appeared.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a repository
+        2. Click History
+        3. See the error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How do you run it?
+      options:
+        - Docker image (ghcr.io)
+        - Docker Compose
+        - bun run start
+        - bun run dev
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Web UI version
+      description: Shown in the page footer.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: lore-version
+    attributes:
+      label: Lore server version
+      description: Run `loreserver --version`, or check the first line of the server log.
+      placeholder: "0.13.1"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Firefox 150 on Windows 11
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Gateway output or browser console errors. This field is formatted as code.
+      render: shell

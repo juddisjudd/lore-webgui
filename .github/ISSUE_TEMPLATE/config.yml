@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Lore server or CLI bug
+    url: https://github.com/EpicGames/lore/issues
+    about: Problems in Lore itself belong in the Lore repository.
+  - name: Lore documentation
+    url: https://epicgames.github.io/lore/
+    about: How Lore works, how to run a server, and how to use the CLI.
