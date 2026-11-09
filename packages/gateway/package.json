@@ -24,7 +24,7 @@
 		"@bufbuild/buf": "1.75.0",
 		"@bufbuild/protoc-gen-es": "2.17.0",
 		"@types/bun": "^1.4.4",
-		"typescript": "^6"
+		"typescript": "^7"
 	},
 	"license": "MIT"
 }
