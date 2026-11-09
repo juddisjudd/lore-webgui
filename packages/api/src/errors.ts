@@ -21,3 +21,21 @@ export class LoreFailure extends Schema.TaggedError<LoreFailure>()(
 export const LoreErrors = [NotFound, BadRequest, Conflict, Forbidden, NotSupported, Unavailable, LoreFailure] as const
 
 export type LoreError = InstanceType<(typeof LoreErrors)[number]>
+
+export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
+	"Unauthorized",
+	{ message: Schema.String },
+	{ httpApiStatus: 401 }
+) {}
+
+export class TooManyRequests extends Schema.TaggedError<TooManyRequests>()(
+	"TooManyRequests",
+	{ message: Schema.String },
+	{ httpApiStatus: 429 }
+) {}
+
+export const ApiErrors = [...LoreErrors, Unauthorized] as const
+
+export const AuthErrors = [BadRequest, Conflict, Forbidden, NotFound, Unauthorized, TooManyRequests] as const
+
+export type AuthError = InstanceType<(typeof AuthErrors)[number]>

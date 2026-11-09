@@ -1,5 +1,5 @@
 import { LoreApi } from '@lore-webui/api';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { Context, Effect, Layer, ManagedRuntime, Result } from 'effect';
 import { FetchHttpClient } from 'effect/http';
 import { HttpApiClient } from 'effect/http-api';
@@ -21,8 +21,13 @@ const statuses: Record<string, number> = {
 	Forbidden: 403,
 	NotSupported: 501,
 	Unavailable: 503,
-	LoreFailure: 502
+	LoreFailure: 502,
+	Unauthorized: 401,
+	TooManyRequests: 429
 };
+
+export const loginPath = (next = location.pathname + location.search) =>
+	next === '/' ? '/login' : `/login?${new URLSearchParams({ next })}`;
 
 export interface Failure {
 	readonly status: number;
@@ -51,5 +56,6 @@ export async function attempt<A, E>(
 export async function load<A, E>(f: (client: Client) => Effect.Effect<A, E>): Promise<A> {
 	const result = await attempt(f);
 	if (result.ok) return result.value;
+	if (result.error.status === 401) redirect(307, loginPath());
 	error(result.error.status, result.error.message);
 }

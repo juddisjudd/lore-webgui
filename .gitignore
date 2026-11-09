@@ -6,3 +6,5 @@ packages/web/.svelte-kit
 .env.*
 !.env.example
 *.tmp.ts
+/data/
+packages/gateway/data/

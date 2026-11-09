@@ -3,6 +3,7 @@ import { createGrpcTransport } from "@connectrpc/connect-node"
 import { ApiError, type CreateBranch, type CreateRepository } from "@lore-webui/api"
 import type * as Domain from "@lore-webui/api"
 import { Cache, Context, Duration, Effect, Exit, Layer, Option, Redacted, Stream } from "effect"
+import { CurrentUser } from "../auth/CurrentUser.ts"
 import { Settings } from "../config.ts"
 import { AdminService } from "../gen/admin_pb.ts"
 import { LockService } from "../gen/lock_pb.ts"
@@ -14,6 +15,7 @@ import { NodeType } from "../gen/lore/thin_client/v1/model_pb.ts"
 import { ThinClientService } from "../gen/lore/thin_client/v1/thin_client_pb.ts"
 import * as convert from "./convert.ts"
 import { badRequest, fromConnect } from "./errors.ts"
+import { identity, unsignedIdentityToken } from "./identity.ts"
 
 type LoreError = ApiError.LoreError
 
@@ -94,7 +96,9 @@ const make = Effect.gen(function* () {
 	const authorization = Option.map(token, (t) => `Bearer ${t}`)
 
 	const auth: Interceptor = (next) => (req) => {
+		const name = identity.getStore()
 		if (Option.isSome(authorization)) req.header.set("authorization", authorization.value)
+		else if (name) req.header.set("authorization", `Bearer ${unsignedIdentityToken(name)}`)
 		return next(req)
 	}
 	const transport = createGrpcTransport({ baseUrl: settings.grpcUrl, interceptors: [auth] })
@@ -106,7 +110,14 @@ const make = Effect.gen(function* () {
 	const notifications = createClient(NotificationService, transport)
 	const admin = createClient(AdminService, transport)
 
-	const call = <A>(f: (signal: AbortSignal) => Promise<A>) => Effect.tryPromise({ try: f, catch: fromConnect })
+	const call = <A>(f: (signal: AbortSignal) => Promise<A>) =>
+		Effect.flatMap(Effect.service(CurrentUser), (viewer) => {
+			const name = viewer?.user.username
+			return Effect.tryPromise({
+				try: (signal) => (name ? identity.run(name, () => f(signal)) : f(signal)),
+				catch: fromConnect
+			})
+		})
 
 	const collect = <A>(f: (signal: AbortSignal) => AsyncIterable<A>) =>
 		call(async (signal) => {

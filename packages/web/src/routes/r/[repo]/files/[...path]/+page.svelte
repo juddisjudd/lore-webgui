@@ -17,7 +17,7 @@
 	const segments = $derived(data.path ? data.path.split('/') : []);
 	const crumbs = $derived(segments.map((name, i) => ({ name, path: segments.slice(0, i + 1).join('/') })));
 	const parentPath = $derived(segments.slice(0, -1).join('/'));
-	const cloneUrl = $derived(`lore://${data.server.grpcUrl.replace(/^\w+:\/\//, '')}/${data.repo.name}`);
+	const cloneUrl = $derived(`lore://${(data.server?.grpcUrl ?? '').replace(/^\w+:\/\//, '')}/${data.repo.name}`);
 	const locks = $derived(data.locks.ok ? data.locks.value : []);
 	const lockAt = $derived(new Map(locks.map((lock) => [lock.path, lock])));
 	const lockedUnder = (dir: string) => locks.filter((lock) => lock.path.startsWith(`${dir}/`)).length;

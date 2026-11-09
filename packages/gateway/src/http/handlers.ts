@@ -1,10 +1,12 @@
 import { LoreApi } from "@lore-webui/api"
 import { Effect, Layer, Option } from "effect"
 import { HttpApiBuilder } from "effect/http-api"
+import { requireRole } from "../auth/CurrentUser.ts"
 import { Settings } from "../config.ts"
 import { textDiff, tooLargeDiff } from "../diff.ts"
 import { Lore } from "../lore/Lore.ts"
 import { Stats } from "../lore/Stats.ts"
+import { AccountHandlers } from "./accounts.ts"
 
 const SystemHandlers = HttpApiBuilder.group(
 	LoreApi,
@@ -44,9 +46,9 @@ const RepositoryHandlers = HttpApiBuilder.group(
 		const stats = yield* Stats
 		return handlers.handleAll({
 			list: () => lore.listRepositories,
-			create: ({ payload }) => lore.createRepository(payload),
+			create: ({ payload }) => requireRole("member").pipe(Effect.andThen(lore.createRepository(payload))),
 			get: ({ params }) => lore.getRepository(params.repo),
-			delete: ({ params }) => lore.deleteRepository(params.repo),
+			delete: ({ params }) => requireRole("admin").pipe(Effect.andThen(lore.deleteRepository(params.repo))),
 			stats: ({ params, query }) => stats.forBranch(params.repo, query.branch),
 			compare: ({ params, query }) => lore.compare(params.repo, query.base, query.head)
 		})
@@ -60,9 +62,10 @@ const BranchHandlers = HttpApiBuilder.group(
 		const lore = yield* Lore
 		return handlers.handleAll({
 			list: ({ params, query }) => lore.listBranches(params.repo, query.includeDeleted ?? false),
-			create: ({ params, payload }) => lore.createBranch(params.repo, payload),
+			create: ({ params, payload }) =>
+				requireRole("member").pipe(Effect.andThen(lore.createBranch(params.repo, payload))),
 			get: ({ params }) => lore.getBranch(params.repo, params.branch),
-			delete: ({ params }) => lore.deleteBranch(params.repo, params.branch),
+			delete: ({ params }) => requireRole("member").pipe(Effect.andThen(lore.deleteBranch(params.repo, params.branch))),
 			history: ({ params, query }) => lore.history(params.repo, params.branch, query.cursor),
 			locks: ({ params }) => lore.locks(params.repo, params.branch)
 		})
@@ -112,6 +115,7 @@ const ContentHandlers = HttpApiBuilder.group(
 )
 
 export const ApiHandlers = Layer.mergeAll(
+	AccountHandlers,
 	SystemHandlers,
 	RepositoryHandlers,
 	BranchHandlers,

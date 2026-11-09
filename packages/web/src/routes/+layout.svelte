@@ -1,11 +1,18 @@
 <script lang="ts">
 	import '../app.css';
 	import favicon from '#lib/assets/favicon.svg';
+	import { attempt } from '#lib/api.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
 
-	const host = $derived(data.server.grpcUrl.replace(/^\w+:\/\//, ''));
+	const host = $derived(data.server?.grpcUrl.replace(/^\w+:\/\//, '') ?? '');
+	const user = $derived(data.auth.user);
+
+	async function signOut() {
+		await attempt((client) => client.auth.logout());
+		location.assign('/login');
+	}
 </script>
 
 <svelte:head>
@@ -24,15 +31,24 @@
 				</svg>
 				<span>lore</span>
 			</a>
-			<span class={['server', data.server.reachable ? 'up' : 'down']} title={data.server.error ?? host}>
-				<span class="dot" aria-hidden="true"></span>
-				<span class="host" translate="no">{host}</span>
-				<span class="visually-hidden">{data.server.reachable ? 'connected' : 'unreachable'}</span>
-			</span>
+			{#if data.server}
+				<span class={['server', data.server.reachable ? 'up' : 'down']} title={data.server.error ?? host}>
+					<span class="dot" aria-hidden="true"></span>
+					<span class="host" translate="no">{host}</span>
+					<span class="visually-hidden">{data.server.reachable ? 'connected' : 'unreachable'}</span>
+				</span>
+			{/if}
+			{#if user}
+				<span class="account">
+					{#if user.role === 'admin' && !user.mustChangePassword}<a href="/users">Users</a>{/if}
+					<a class="mono" href="/account" translate="no">{user.username}</a>
+					<button class="link" onclick={signOut}>Sign out</button>
+				</span>
+			{/if}
 		</nav>
 	</header>
 
-	{#if !data.server.reachable}
+	{#if data.server && !data.server.reachable}
 		<div class="outage" role="alert">
 			<div class="inner">
 				<strong>Lore server unreachable.</strong>
@@ -49,7 +65,7 @@
 		<div class="inner">
 			<span class="versions" translate="no">
 				<span>lore web ui <span class="version">{__APP_VERSION__}</span></span>
-				{#if data.server.reachable && data.server.version}
+				{#if data.server?.reachable && data.server.version}
 					<span>lore server <span class="version">{data.server.version}</span></span>
 				{/if}
 			</span>
@@ -112,6 +128,34 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.account {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+		margin-left: auto;
+		font-size: var(--step--1);
+	}
+
+	.account a,
+	.link {
+		color: var(--muted);
+		text-decoration: none;
+	}
+
+	.account a:hover,
+	.link:hover {
+		color: var(--text);
+		text-decoration: underline;
+	}
+
+	.link {
+		padding: 0;
+		border: 0;
+		background: none;
+		font: inherit;
+		cursor: pointer;
 	}
 
 	.dot {

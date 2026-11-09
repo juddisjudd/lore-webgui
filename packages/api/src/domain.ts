@@ -245,3 +245,56 @@ export const CreateBranch = Schema.Struct({
 	category: Schema.optional(Schema.String)
 })
 export type CreateBranch = typeof CreateBranch.Type
+
+export const Role = Schema.Literals(["admin", "member", "viewer"])
+export type Role = typeof Role.Type
+
+export const User = Schema.Struct({
+	id: Schema.Number,
+	username: Schema.String,
+	role: Role,
+	mustChangePassword: Schema.Boolean,
+	disabled: Schema.Boolean,
+	created: Schema.Number
+})
+export type User = typeof User.Type
+
+export const AuthStatus = Schema.Struct({
+	mode: Schema.Literals(["accounts", "off"]),
+	setupRequired: Schema.Boolean,
+	user: Schema.NullOr(User)
+})
+export type AuthStatus = typeof AuthStatus.Type
+
+export const SetupRequest = Schema.Struct({
+	code: Schema.String,
+	username: Schema.String,
+	password: Schema.String
+})
+
+export const LoginRequest = Schema.Struct({
+	username: Schema.String,
+	password: Schema.String
+})
+
+export const PasswordChange = Schema.Struct({
+	current: Schema.String,
+	next: Schema.String
+})
+
+export const NewUser = Schema.Struct({
+	username: Schema.String,
+	password: Schema.String,
+	role: Role
+})
+export type NewUser = typeof NewUser.Type
+
+export const UserUpdate = Schema.Struct({
+	role: Schema.optional(Role),
+	disabled: Schema.optional(Schema.Boolean)
+})
+export type UserUpdate = typeof UserUpdate.Type
+
+export const PasswordReset = Schema.Struct({
+	password: Schema.String
+})

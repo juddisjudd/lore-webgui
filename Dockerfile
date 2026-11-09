@@ -12,6 +12,7 @@ RUN bun install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN cd packages/web && bun --bun x svelte-kit sync && bun --bun x vite build
 RUN cd packages/gateway && bun run bundle
+RUN mkdir -p /data
 
 FROM oven/bun:1.4.4-distroless
 WORKDIR /app
@@ -19,9 +20,12 @@ WORKDIR /app
 COPY --from=build /app/packages/gateway/dist/gateway.js ./gateway.js
 COPY --from=build /app/packages/web/build ./public
 COPY LICENSE ./
+COPY --from=build --chown=65532:65532 /data /data
 
 ENV PORT=7337 \
-    STATIC_DIR=/app/public
+    STATIC_DIR=/app/public \
+    DATA_DIR=/data
+VOLUME /data
 EXPOSE 7337
 
 USER 65532:65532

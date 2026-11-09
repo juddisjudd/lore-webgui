@@ -16,6 +16,7 @@ A web interface for [Lore](https://github.com/EpicGames/lore), the open source v
 - **Compare branches.** See what one branch would bring into another: its revisions, its changed files, and the files both branches changed, which will conflict when you merge.
 - **File locks.** The Locks tab lists every locked file on a branch, with its owner and lock time. Locked files and the folders that contain them show a lock in the file list. Locks are read-only here; take and release them with `lore lock`.
 - **Live updates.** Open pages refresh by themselves when someone pushes, creates or deletes a branch, or locks or unlocks a file.
+- **Accounts.** People sign in with accounts an admin creates. Roles decide who only browses, who creates repositories and branches, and who manages users.
 - **Repository stats.** Badges show the languages on a branch and its game assets by type: textures, models, sounds, video, fonts, and Unreal, Unity and Godot assets.
 - **Keyboard and themes.** Press `1` to `4` to switch between Files, History, Branches and Locks. Light and dark themes follow your system setting.
 
@@ -43,7 +44,7 @@ You need [Bun](https://bun.sh) 1.4 or newer, Node.js 22.17 or newer, and a runni
    $env:LORE_HOST = "lore.local"; bun run dev
    ```
 
-3. Open <http://localhost:5173>.
+3. Open <http://localhost:5173>. The first visit asks for the setup code that the gateway printed in your terminal, then creates your admin account.
 
 Leave out `LORE_HOST` to connect to a server on `localhost`.
 
@@ -93,10 +94,30 @@ Images for `linux/amd64` and `linux/arm64` are published to the GitHub Container
 1. Start the container:
 
    ```sh
-   docker run -d -p 7337:7337 -e LORE_HOST=lore.local ghcr.io/juddisjudd/lore-webgui:latest
+   docker run -d --name lore-webgui -p 7337:7337 -v lore-webgui-data:/data -e LORE_HOST=lore.local ghcr.io/juddisjudd/lore-webgui:latest
    ```
 
-2. Open <http://localhost:7337>.
+2. Print the setup code for the first admin:
+
+   ```sh
+   docker logs lore-webgui
+   ```
+
+3. Open <http://localhost:7337> and enter the code.
+
+Keep the volume at `/data`. It holds the accounts database, and without it the accounts are lost each time the container is recreated.
+
+### Update a container from a version without accounts
+
+Newer images require sign-in. To update a container that runs an older image:
+
+1. Pull the new image: `docker pull ghcr.io/juddisjudd/lore-webgui:latest`
+2. Remove the old container: `docker rm -f lore-webgui`
+3. Start it again with the volume at `/data`, as in step 1 above.
+4. Run `docker logs lore-webgui` and copy the setup code.
+5. Open the web UI, enter the code and create the admin.
+
+To see who did what in Lore, also set `trust_unsigned_identity = true` on the Lore server, as [Names in Lore](#names-in-lore) describes.
 
 Each push to `main` publishes `latest` and a tag for the short commit hash. Each version tag such as `v0.1.0` publishes `0.1.0` and `0.1`.
 
@@ -114,7 +135,51 @@ In PowerShell:
 $env:LORE_HOST = "lore.local"; docker compose up -d
 ```
 
+Run `docker compose logs lore-webgui` to see the setup code. Compose keeps the accounts database in the `lore-webgui-data` volume.
+
 Compose pulls the published image. Add `--build` to build it from your local source instead. Leave out `LORE_HOST` to reach a Lore server running on the Docker host itself. Compose passes `PORT` and `LORE_TOKEN` through as well.
+
+## Accounts
+
+The web UI keeps its own accounts in a SQLite file in `DATA_DIR`.
+
+### First admin
+
+On first start, the gateway has no accounts and prints a one-time setup code in its log:
+
+```
+No accounts yet. Open the web UI and enter this setup code to create the first admin: …
+```
+
+1. Open the web UI. It shows the setup page.
+2. Paste the code, then choose the admin's username and password.
+
+The code works once. If the gateway restarts before anyone uses it, the gateway prints a new one.
+
+### Roles
+
+| Role | Can |
+| --- | --- |
+| Viewer | Browse repositories, history, files, locks and branch comparisons. |
+| Member | Everything a viewer can, plus create repositories and create or delete branches. |
+| Admin | Everything a member can, plus manage users and delete repositories through the API. |
+
+An admin adds people on the Users page with a temporary password. Each person chooses their own password at first sign-in. Ten wrong passwords in a row lock a username for 15 minutes.
+
+### Names in Lore
+
+The gateway sends the signed-in username with each call to Lore, so branches and repositories created in the web UI show who made them. Lore reads the name only when its configuration trusts unsigned identities:
+
+```toml
+[server]
+trust_unsigned_identity = true
+```
+
+Without that setting, Lore records web UI actions as `<unknown>`. Lore does not check these names, so turn the setting on only if you trust everyone who can reach the Lore server. When `LORE_TOKEN` is set, the gateway sends that token instead, and Lore records the token's identity.
+
+### Turning accounts off
+
+Set `AUTH=off` to run without sign-in, for example behind a reverse proxy that signs people in. Everyone then has full access.
 
 ## Configuration
 
@@ -130,6 +195,8 @@ The gateway reads these environment variables:
 | `STATIC_DIR` | `packages/web/build` | Folder of the built web app. |
 | `MAX_DIFF_BYTES` | `2097152` | Files larger than this are not diffed. |
 | `HISTORY_CONCURRENCY` | `16` | Parallel revision lookups per page of history. |
+| `AUTH` | `accounts` | `accounts` requires sign-in. `off` gives everyone full access. |
+| `DATA_DIR` | `data` | Folder for the accounts database, relative to the gateway's working folder. The Docker image uses `/data`. |
 
 In development, set `GATEWAY_URL` to point the Vite dev server at a gateway on another address. The default is `http://localhost:7337`.
 
@@ -156,7 +223,7 @@ The generated gRPC code in `packages/gateway/src/gen` is committed. To refresh i
 
 ## Known limitations
 
-- There is no per-user sign-in. The gateway sends one token, `LORE_TOKEN`, with every request.
+- Accounts protect the web UI only. Anyone who can reach the Lore server directly can still use the Lore CLI with whatever access the server allows.
 - Repositories can only be deleted through the API (`DELETE /api/repositories/:repo`). Lore deletes them permanently, so the UI has no button for it.
 - Downloads show no progress bar. Bun drops the `Content-Length` header on streamed responses.
 - The server does not implement `ContentDiff` yet, so the gateway computes diffs itself. `RevisionTree` also leaves out the folder you ask for, so the gateway reads it from the parent folder.

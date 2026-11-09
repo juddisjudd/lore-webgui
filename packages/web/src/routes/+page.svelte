@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { attempt } from '#lib/api.ts';
+	import { can } from '#lib/auth.ts';
 	import { ago, when } from '#lib/format.ts';
 	import Composition from '#lib/Composition.svelte';
 	import Modal from '#lib/Modal.svelte';
@@ -8,6 +9,9 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const reachable = $derived(data.server?.reachable ?? false);
+	const canCreate = $derived(can(data.auth, 'member'));
 
 	let creating = $state(false);
 	let name = $state('');
@@ -49,16 +53,18 @@
 
 <div class="head">
 	<h1>Repositories</h1>
-	{#if data.server.reachable && data.repositories.length > 0}
+	{#if reachable && canCreate && data.repositories.length > 0}
 		<button class="button primary" onclick={startCreate}>New repository</button>
 	{/if}
 </div>
 
 {#if data.repositories.length === 0}
 	<div class="empty">
-		{#if data.server.reachable}
+		{#if reachable}
 			<p>This server has no repositories yet.</p>
-			<button class="button primary" onclick={startCreate}>Create the first repository</button>
+			{#if canCreate}
+				<button class="button primary" onclick={startCreate}>Create the first repository</button>
+			{/if}
 		{:else}
 			<p>Start the Lore server, then reload this page.</p>
 		{/if}

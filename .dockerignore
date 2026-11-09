@@ -9,3 +9,5 @@ docs
 .env.*
 Dockerfile
 compose.yaml
+data
+packages/gateway/data

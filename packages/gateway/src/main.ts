@@ -5,6 +5,8 @@ import { HttpRouter, HttpServerResponse, HttpStaticServer } from "effect/http"
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api"
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
+import { Accounts } from "./auth/Accounts.ts"
+import { AuthMiddleware } from "./auth/middleware.ts"
 import { Settings } from "./config.ts"
 import { ContentRoutes } from "./http/content.ts"
 import { EventRoutes } from "./http/events.ts"
@@ -40,7 +42,7 @@ const Server = Layer.unwrap(
 		const { port, grpcUrl, httpUrl } = yield* Settings
 		yield* Effect.logInfo(`Lore gRPC ${grpcUrl}, HTTP ${httpUrl}`)
 		yield* Effect.logInfo(`Gateway listening on http://localhost:${port}`)
-		return HttpRouter.serve(Layer.mergeAll(ApiRoutes, DocsRoute, ContentRoutes, EventRoutes, StaticRoutes)).pipe(
+		return HttpRouter.serve(Layer.mergeAll(ApiRoutes, DocsRoute, ContentRoutes, EventRoutes, StaticRoutes, AuthMiddleware)).pipe(
 			Layer.provide(BunHttpServer.layer({ port }))
 		)
 	})
@@ -49,6 +51,7 @@ const Server = Layer.unwrap(
 Layer.launch(Server).pipe(
 	Effect.provide(Stats.layer),
 	Effect.provide(Lore.layer),
+	Effect.provide(Accounts.layer),
 	Effect.provide(Settings.layer),
 	BunRuntime.runMain
 )

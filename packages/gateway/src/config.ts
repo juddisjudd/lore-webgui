@@ -8,6 +8,8 @@ export interface GatewaySettings {
 	readonly staticDir: Option.Option<string>
 	readonly maxDiffBytes: number
 	readonly historyConcurrency: number
+	readonly auth: "accounts" | "off"
+	readonly dataDir: string
 }
 
 const settings = Effect.gen(function* () {
@@ -21,7 +23,9 @@ const settings = Effect.gen(function* () {
 		port: yield* Config.Port("PORT").pipe(Config.withDefault(7337)),
 		staticDir: yield* Config.option(Config.String("STATIC_DIR")),
 		maxDiffBytes: yield* Config.Int("MAX_DIFF_BYTES").pipe(Config.withDefault(2 * 1024 * 1024)),
-		historyConcurrency: yield* Config.Int("HISTORY_CONCURRENCY").pipe(Config.withDefault(16))
+		historyConcurrency: yield* Config.Int("HISTORY_CONCURRENCY").pipe(Config.withDefault(16)),
+		auth: yield* Config.Literals(["accounts", "off"], "AUTH").pipe(Config.withDefault("accounts" as const)),
+		dataDir: yield* Config.String("DATA_DIR").pipe(Config.withDefault("data"))
 	} satisfies GatewaySettings
 })
 
@@ -36,6 +40,8 @@ export class Settings extends Context.Service<Settings, GatewaySettings>()("lore
 			staticDir: Option.none(),
 			maxDiffBytes: 2 * 1024 * 1024,
 			historyConcurrency: 16,
+			auth: "accounts",
+			dataDir: ":memory:",
 			...overrides
 		})
 }

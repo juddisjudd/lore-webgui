@@ -2,6 +2,7 @@
 	import type { RevisionRef } from '@lore-webui/api';
 	import BranchDialog from '#lib/BranchDialog.svelte';
 	import ChangeList from '#lib/ChangeList.svelte';
+	import { can } from '#lib/auth.ts';
 	import { ago, author, firstLine, short, when } from '#lib/format.ts';
 	import { withRef } from '#lib/links.ts';
 	import Sigil from '#lib/Sigil.svelte';
@@ -62,7 +63,7 @@
 		</div>
 		<div class="actions">
 			<a class="button" href={browse}>Browse files</a>
-			{#if owner}<button class="button" onclick={() => (branching = true)}>Branch from here</button>{/if}
+			{#if owner && can(data.auth, 'member')}<button class="button" onclick={() => (branching = true)}>Branch from here</button>{/if}
 		</div>
 	</header>
 

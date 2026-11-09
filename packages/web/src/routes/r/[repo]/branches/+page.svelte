@@ -2,6 +2,7 @@
 	import type { Branch } from '@lore-webui/api';
 	import { goto, refreshAll } from '$app/navigation';
 	import { attempt } from '#lib/api.ts';
+	import { can } from '#lib/auth.ts';
 	import BranchDialog from '#lib/BranchDialog.svelte';
 	import { ago, author, short, when } from '#lib/format.ts';
 	import Modal from '#lib/Modal.svelte';
@@ -9,6 +10,8 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+
+	const canWrite = $derived(can(data.auth, 'member'));
 
 	let creating = $state(false);
 	let doomed = $state<Branch | null>(null);
@@ -54,9 +57,11 @@
 	>
 		{data.showDeleted ? 'Hide deleted branches' : 'Show deleted branches'}
 	</a>
-	<button class="button primary" onclick={() => (creating = true)} disabled={data.branches.every((b) => !b.latest)}>
-		New branch
-	</button>
+	{#if canWrite}
+		<button class="button primary" onclick={() => (creating = true)} disabled={data.branches.every((b) => !b.latest)}>
+			New branch
+		</button>
+	{/if}
 </div>
 
 <div class="table-wrap">
@@ -103,7 +108,9 @@
 							<a class="button" href={compareUrl(branch)} aria-label="Compare {branch.name} with {data.repo.defaultBranchName}">
 								Compare
 							</a>
-							<button class="button danger" onclick={() => askDelete(branch)} aria-label="Delete {branch.name}">Delete</button>
+							{#if canWrite}
+								<button class="button danger" onclick={() => askDelete(branch)} aria-label="Delete {branch.name}">Delete</button>
+							{/if}
 						{/if}
 					</td>
 				</tr>
