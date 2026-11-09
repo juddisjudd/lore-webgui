@@ -2,6 +2,7 @@
 	import '../app.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import { attempt } from '#lib/api.ts';
+	import UserMenu from '#lib/UserMenu.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -39,11 +40,7 @@
 				</span>
 			{/if}
 			{#if user}
-				<span class="account">
-					{#if user.role === 'admin' && !user.mustChangePassword}<a href="/users">Users</a>{/if}
-					<a class="mono" href="/account" translate="no">{user.username}</a>
-					<button class="link" onclick={signOut}>Sign out</button>
-				</span>
+				<span class="account"><UserMenu {user} onsignout={signOut} /></span>
 			{/if}
 		</nav>
 	</header>
@@ -131,31 +128,8 @@
 	}
 
 	.account {
-		display: flex;
-		align-items: center;
-		gap: 1.25rem;
 		margin-left: auto;
 		font-size: var(--step--1);
-	}
-
-	.account a,
-	.link {
-		color: var(--muted);
-		text-decoration: none;
-	}
-
-	.account a:hover,
-	.link:hover {
-		color: var(--text);
-		text-decoration: underline;
-	}
-
-	.link {
-		padding: 0;
-		border: 0;
-		background: none;
-		font: inherit;
-		cursor: pointer;
 	}
 
 	.dot {

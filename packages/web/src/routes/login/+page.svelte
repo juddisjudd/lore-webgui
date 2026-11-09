@@ -24,7 +24,7 @@
 			failure = result.error.message;
 			return;
 		}
-		await goto(result.value.mustChangePassword ? '/account' : next, { refreshAll: true });
+		await goto(result.value.mustChangePassword ? '/settings' : next, { refreshAll: true });
 	}
 </script>
 

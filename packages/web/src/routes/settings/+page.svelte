@@ -38,20 +38,21 @@
 </script>
 
 <svelte:head>
-	<title>Account – Lore</title>
+	<title>Settings – Lore</title>
 </svelte:head>
 
 {#if data.auth.mode === 'off' || !user}
-	<AuthCard title="Account">
+	<AuthCard title="Settings">
 		<p class="muted">Accounts are turned off on this gateway, so there is nothing to change here.</p>
 	</AuthCard>
 {:else}
-	<AuthCard title={user.mustChangePassword ? 'Choose a new password' : 'Change your password'}>
+	<AuthCard title={user.mustChangePassword ? 'Choose a new password' : 'Settings'}>
 		<p class="muted">
 			Signed in as <strong class="mono" translate="no">{user.username}</strong>, with the {user.role} role.
 			{#if user.mustChangePassword}An admin set your current password, so choose your own before you continue.{/if}
 		</p>
-		<form onsubmit={submit}>
+		{#if !user.mustChangePassword}<h2>Password</h2>{/if}
+		<form onsubmit={submit} aria-label="Change password">
 			<label class="field">
 				<span>Current password</span>
 				<input class="input" type="password" bind:value={current} required autocomplete="current-password" />
@@ -82,3 +83,10 @@
 		</form>
 	</AuthCard>
 {/if}
+
+<style>
+	h2 {
+		margin-top: 0.5rem;
+		font-size: var(--step-1);
+	}
+</style>

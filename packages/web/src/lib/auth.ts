@@ -14,7 +14,7 @@ export function gate(auth: AuthStatus, path: string, next: string): string | nul
 		if (path === '/login') return null;
 		return next === '/' ? '/login' : `/login?${new URLSearchParams({ next })}`;
 	}
-	if (auth.user.mustChangePassword) return path === '/account' ? null : '/account';
+	if (auth.user.mustChangePassword) return path === '/settings' ? null : '/settings';
 	return ENTRY_PAGES.includes(path) ? '/' : null;
 }
 
