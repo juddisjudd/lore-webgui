@@ -41,4 +41,8 @@ export const short = (hex: string, length = 10) => hex.slice(0, length);
 
 export const firstLine = (message: string) => message.split(/\r?\n/, 1)[0]?.trim() || 'No message';
 
-export const author = (name: string) => (name === '' || name === '<unknown>' ? 'Unknown author' : name);
+const isUnknown = (name: string) => name === '' || name === '<unknown>';
+
+export const author = (name: string) => (isUnknown(name) ? 'Unknown author' : name);
+
+export const lockOwner = (name: string) => (isUnknown(name) ? 'Unknown user' : name);

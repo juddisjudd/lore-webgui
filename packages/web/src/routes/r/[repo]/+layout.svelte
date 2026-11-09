@@ -13,14 +13,21 @@
 	const tabs = $derived([
 		{ key: '1', label: 'Files', href: withRef(`${base}/files`, { branch: branchQuery, rev: data.rev }), match: [`${base}/files`] },
 		{ key: '2', label: 'History', href: withRef(`${base}/history`, { branch: branchQuery }), match: [`${base}/history`, `${base}/rev`] },
-		{ key: '3', label: 'Branches', href: `${base}/branches`, match: [`${base}/branches`] }
+		{ key: '3', label: 'Branches', href: `${base}/branches`, match: [`${base}/branches`] },
+		{
+			key: '4',
+			label: 'Locks',
+			href: withRef(`${base}/locks`, { branch: branchQuery }),
+			match: [`${base}/locks`],
+			count: data.locks.ok ? data.locks.value.length : 0
+		}
 	]);
 
 	const section = $derived(page.url.pathname.split('/')[3] ?? 'files');
 
 	function switchBranch(event: Event) {
 		const name = (event.currentTarget as HTMLSelectElement).value;
-		const target = section === 'history' ? 'history' : 'files';
+		const target = section === 'history' || section === 'locks' ? section : 'files';
 		const branch = name === data.repo.defaultBranchName ? null : name;
 		void goto(withRef(`${base}/${target}`, { branch }));
 	}
@@ -76,6 +83,7 @@
 				>
 					<kbd aria-hidden="true">{tab.key}</kbd>
 					<span>{tab.label}</span>
+					{#if tab.count}<span class="count">{tab.count}</span>{/if}
 				</a>
 			{/each}
 		</nav>
@@ -149,7 +157,18 @@
 
 	.tabs {
 		display: flex;
-		gap: 1.75rem;
+		flex-wrap: wrap;
+		gap: 0 1.75rem;
+	}
+
+	@media (max-width: 40rem) {
+		.tabs {
+			gap: 0 1.25rem;
+		}
+
+		.tabs kbd {
+			display: none;
+		}
 	}
 
 	.tabs a {
@@ -172,6 +191,13 @@
 	.tabs a[aria-current='page'] {
 		color: var(--text);
 		border-bottom-color: var(--text);
+	}
+
+	.count {
+		margin-left: -0.15rem;
+		color: var(--muted);
+		font-weight: 400;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.tabs a[aria-current='page'] kbd {

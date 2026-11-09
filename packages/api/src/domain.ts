@@ -88,6 +88,14 @@ export const TreeListing = Schema.Struct({
 })
 export type TreeListing = typeof TreeListing.Type
 
+export const FileLock = Schema.Struct({
+	path: Schema.String,
+	branchId: Schema.String,
+	owner: Schema.String,
+	lockedAt: Schema.NullOr(Schema.Number)
+})
+export type FileLock = typeof FileLock.Type
+
 export const ChangeAction = Schema.Literals(["added", "deleted", "modified", "moved", "copied", "unchanged"])
 export type ChangeAction = typeof ChangeAction.Type
 

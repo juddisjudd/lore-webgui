@@ -56,7 +56,8 @@ const BranchHandlers = HttpApiBuilder.group(
 			create: ({ params, payload }) => lore.createBranch(params.repo, payload),
 			get: ({ params }) => lore.getBranch(params.repo, params.branch),
 			delete: ({ params }) => lore.deleteBranch(params.repo, params.branch),
-			history: ({ params, query }) => lore.history(params.repo, params.branch, query.cursor)
+			history: ({ params, query }) => lore.history(params.repo, params.branch, query.cursor),
+			locks: ({ params }) => lore.locks(params.repo, params.branch)
 		})
 	})
 )

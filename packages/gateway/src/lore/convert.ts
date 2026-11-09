@@ -1,4 +1,6 @@
+import { timestampMs } from "@bufbuild/protobuf/wkt"
 import type * as Domain from "@lore-webui/api"
+import type { Lock } from "../gen/lock_pb.ts"
 import type { Address, Branch, Repository, RevisionIdentifier } from "../gen/lore/model/v1/model_pb.ts"
 import {
 	Action,
@@ -52,6 +54,16 @@ export const branch = (b: Branch): Domain.Branch => ({
 	deleted: b.deleted,
 	stack: b.stack.map((p) => ({ branchId: toHex(p.branchId), signature: toHex(p.revisionSignature) }))
 })
+
+export const fileLock = (lock: Lock): Domain.FileLock | null =>
+	lock.resource
+		? {
+				path: lock.resource.description,
+				branchId: toHex(lock.resource.branch),
+				owner: lock.owner,
+				lockedAt: lock.lockedAt ? timestampMs(lock.lockedAt) : null
+			}
+		: null
 
 export const revisionRef = (signature: Uint8Array, identifier: RevisionIdentifier | undefined): Domain.RevisionRef => ({
 	signature: toHex(signature),

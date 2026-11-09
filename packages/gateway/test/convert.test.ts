@@ -1,5 +1,7 @@
 import { create } from "@bufbuild/protobuf"
+import { timestampFromMs } from "@bufbuild/protobuf/wkt"
 import { describe, expect, test } from "bun:test"
+import { LockSchema } from "../src/gen/lock_pb.ts"
 import { AddressSchema, BranchSchema } from "../src/gen/lore/model/v1/model_pb.ts"
 import { Action, DiffChangeSchema, NodeType, TreeNodeSchema } from "../src/gen/lore/thin_client/v1/model_pb.ts"
 import * as convert from "../src/lore/convert.ts"
@@ -82,5 +84,25 @@ describe("tree entries", () => {
 			convert.treeEntry(create(TreeNodeSchema, { path, nodeType: path === "dir" ? NodeType.DIRECTORY : NodeType.FILE }))
 		)
 		expect(entries.sort(convert.compareEntries).map((e) => e.name)).toEqual(["dir", "b2", "b10"])
+	})
+})
+
+describe("fileLock", () => {
+	test("reads the path from the resource description and the time in milliseconds", () => {
+		const lock = create(LockSchema, {
+			resource: { branch: fill(16, 0x02), hash: fill(32, 0x03), description: "Content/Maps/Arena.umap" },
+			owner: "artist@studio",
+			lockedAt: timestampFromMs(1_700_000_000_123)
+		})
+		expect(convert.fileLock(lock)).toEqual({
+			path: "Content/Maps/Arena.umap",
+			branchId: "02".repeat(16),
+			owner: "artist@studio",
+			lockedAt: 1_700_000_000_123
+		})
+	})
+
+	test("drop a lock without a resource", () => {
+		expect(convert.fileLock(create(LockSchema, { owner: "nobody" }))).toBeNull()
 	})
 })

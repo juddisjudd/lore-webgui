@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { load as request } from '#lib/api.ts';
+import { attempt, load as request } from '#lib/api.ts';
 import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async ({ params, url }) => {
@@ -11,5 +11,6 @@ export const load: LayoutLoad = async ({ params, url }) => {
 	const branch = branches.find((b) => b.name === branchName) ?? branches.find((b) => b.id === repo.defaultBranchId);
 	if (!branch) error(404, `Branch ${branchName} not found`);
 	const rev = url.searchParams.get('rev');
-	return { repo, branches, branch, rev, ref: rev ?? branch.latest };
+	const locks = await attempt((client) => client.branches.locks({ params: { repo: repo.id, branch: branch.id } }));
+	return { repo, branches, branch, rev, ref: rev ?? branch.latest, locks };
 };

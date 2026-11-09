@@ -13,8 +13,9 @@ A web interface for [Lore](https://github.com/EpicGames/lore), the open source v
 - **Files.** Browse any branch or revision. Text files open with line numbers. Images, audio and video play inline. Everything else downloads.
 - **History and diffs.** Each revision shows its changed files with line diffs for text and side-by-side previews for images.
 - **Branches.** Create a branch from any revision and delete branches you no longer need. Create new repositories.
+- **File locks.** The Locks tab lists every locked file on a branch, with its owner and lock time. Locked files and the folders that contain them show a lock in the file list. Locks are read-only here; take and release them with `lore lock`.
 - **Repository stats.** Badges show the languages on a branch and its game assets by type: textures, models, sounds, video, fonts, and Unreal, Unity and Godot assets.
-- **Keyboard and themes.** Press `1`, `2` or `3` to switch between Files, History and Branches. Light and dark themes follow your system setting.
+- **Keyboard and themes.** Press `1` to `4` to switch between Files, History, Branches and Locks. Light and dark themes follow your system setting.
 
 ## Quick start
 

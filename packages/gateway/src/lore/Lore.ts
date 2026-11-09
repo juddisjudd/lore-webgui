@@ -4,6 +4,7 @@ import { ApiError, type CreateBranch, type CreateRepository } from "@lore-webui/
 import type * as Domain from "@lore-webui/api"
 import { Context, Effect, Layer, Option, Redacted } from "effect"
 import { Settings } from "../config.ts"
+import { LockService } from "../gen/lock_pb.ts"
 import { CompressionMode, EnvironmentService } from "../gen/lore/environment/v1/environment_pb.ts"
 import { RepositoryService } from "../gen/lore/repository/v1/repository_pb.ts"
 import { RevisionService } from "../gen/lore/revision/v1/revision_pb.ts"
@@ -38,6 +39,7 @@ export interface LoreService {
 	readonly createBranch: (repo: string, input: CreateBranch) => Effect.Effect<Domain.Branch, LoreError>
 	readonly deleteBranch: (repo: string, branch: string) => Effect.Effect<Domain.Branch, LoreError>
 	readonly history: (repo: string, branch: string, cursor?: string) => Effect.Effect<Domain.HistoryPage, LoreError>
+	readonly locks: (repo: string, branch: string) => Effect.Effect<ReadonlyArray<Domain.FileLock>, LoreError>
 	readonly revision: (repo: string, signature: string) => Effect.Effect<Domain.Revision, LoreError>
 	readonly tree: (repo: string, signature: string, path?: string) => Effect.Effect<Domain.TreeListing, LoreError>
 	readonly files: (
@@ -95,6 +97,7 @@ const make = Effect.gen(function* () {
 	const revisions = createClient(RevisionService, transport)
 	const thin = createClient(ThinClientService, transport)
 	const environments = createClient(EnvironmentService, transport)
+	const lockService = createClient(LockService, transport)
 
 	const call = <A>(f: (signal: AbortSignal) => Promise<A>) => Effect.tryPromise({ try: f, catch: fromConnect })
 
@@ -228,6 +231,17 @@ const make = Effect.gen(function* () {
 			older: page.signatureBackward ? convert.toHex(page.signatureBackward) : null,
 			newer: page.signatureForward ? convert.toHex(page.signatureForward) : null
 		}
+	})
+
+	const locks = Effect.fn("Lore.locks")(function* (repo: string, branch: string) {
+		const repoId = yield* id(repo, "repository id")
+		const branchId = convert.isId(branch)
+			? yield* id(branch, "branch id")
+			: convert.fromHex((yield* getBranch(repo, branch)).id)!
+		const { result } = yield* call((signal) => lockService.query({ branch: branchId }, scope(repoId, signal)))
+		return result
+			.flatMap((lock) => convert.fileLock(lock) ?? [])
+			.sort((a, b) => a.path.localeCompare(b.path))
 	})
 
 	const listDirectory = (repoId: Uint8Array, sig: Uint8Array, path: string) =>
@@ -369,6 +383,7 @@ const make = Effect.gen(function* () {
 		createBranch,
 		deleteBranch,
 		history,
+		locks,
 		revision,
 		tree,
 		files,

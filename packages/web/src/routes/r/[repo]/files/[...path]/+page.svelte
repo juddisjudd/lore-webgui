@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ago, author, bytes, firstLine, when } from '#lib/format.ts';
+	import type { FileLock } from '@lore-webui/api';
+	import { ago, author, bytes, firstLine, lockOwner, when } from '#lib/format.ts';
 	import FileView from '#lib/FileView.svelte';
 	import Glyph from '#lib/Glyph.svelte';
 	import { glyphFor, glyphs } from '#lib/glyphs.ts';
@@ -17,6 +18,12 @@
 	const crumbs = $derived(segments.map((name, i) => ({ name, path: segments.slice(0, i + 1).join('/') })));
 	const parentPath = $derived(segments.slice(0, -1).join('/'));
 	const cloneUrl = $derived(`lore://${data.server.grpcUrl.replace(/^\w+:\/\//, '')}/${data.repo.name}`);
+	const locks = $derived(data.locks.ok ? data.locks.value : []);
+	const lockAt = $derived(new Map(locks.map((lock) => [lock.path, lock])));
+	const lockedUnder = (dir: string) => locks.filter((lock) => lock.path.startsWith(`${dir}/`)).length;
+	const lockTitle = (lock: FileLock) =>
+		`Locked by ${lockOwner(lock.owner)}${lock.lockedAt === null ? '' : ` since ${when(lock.lockedAt)}`}`;
+	const fileLock = $derived(data.listing?.entry ? lockAt.get(data.listing.entry.path) : undefined);
 
 	let copied = $state(false);
 
@@ -72,6 +79,17 @@
 		</div>
 	</div>
 {:else if data.listing.entry && data.listing.entry.kind !== 'directory'}
+	{#if fileLock}
+		<p class="lock-note">
+			<Glyph d={glyphs.lock} />
+			<span>Locked by <strong>{lockOwner(fileLock.owner)}</strong></span>
+			{#if fileLock.lockedAt !== null}
+				<time class="muted" datetime={new Date(fileLock.lockedAt).toISOString()} title={when(fileLock.lockedAt)}>
+					{ago(fileLock.lockedAt)}
+				</time>
+			{/if}
+		</p>
+	{/if}
 	<FileView repo={data.repo.id} entry={data.listing.entry} />
 {:else}
 	<table class="listing">
@@ -90,12 +108,25 @@
 				</tr>
 			{/if}
 			{#each data.listing.children as child (child.path)}
+				{@const lock = lockAt.get(child.path)}
+				{@const nested = child.kind === 'directory' ? lockedUnder(child.path) : 0}
 				<tr>
 					<td>
 						<a class="entry" href={withRef(filesPath(data.repo.id, child.path), ref)}>
 							<span class={['icon', child.kind]}><Glyph d={glyphFor(child.name, child.kind)} /></span>
 							<span class="name">{child.name}</span>
 							{#if child.kind === 'link'}<span class="tag">link</span>{/if}
+							{#if lock}
+								<span class="locked" title={lockTitle(lock)}>
+									<Glyph d={glyphs.lock} />
+									<span>{lockOwner(lock.owner)}</span>
+								</span>
+							{:else if nested > 0}
+								<span class="locked" title="{nested} locked {nested === 1 ? 'file' : 'files'} inside">
+									<Glyph d={glyphs.lock} />
+									<span>{nested}</span>
+								</span>
+							{/if}
 						</a>
 					</td>
 					<td class="size">{bytes(child.size)}</td>
@@ -220,6 +251,32 @@
 	.tag {
 		font-size: var(--step--1);
 		color: var(--muted);
+	}
+
+	.locked {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-left: auto;
+		padding-left: 0.75rem;
+		font-size: var(--step--1);
+		color: var(--muted);
+		white-space: nowrap;
+	}
+
+	.lock-note {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+		margin-bottom: 1rem;
+		padding: 0.6rem 1rem;
+		border: 1px solid var(--line-strong);
+		border-radius: var(--radius-m);
+	}
+
+	.lock-note strong {
+		font-weight: 650;
 	}
 
 	.size {

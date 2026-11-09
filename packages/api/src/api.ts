@@ -5,6 +5,7 @@ import {
 	CreateBranch,
 	CreateRepository,
 	FileDiff,
+	FileLock,
 	HistoryPage,
 	Repository,
 	RepositoryStats,
@@ -63,6 +64,11 @@ export class BranchesApi extends HttpApiGroup.make("branches")
 			params: { ...repo, branch: Schema.String },
 			query: { cursor: Schema.optional(Schema.String) },
 			success: HistoryPage,
+			error: LoreErrors
+		}),
+		HttpApiEndpoint.get("locks", "/:branch/locks", {
+			params: { ...repo, branch: Schema.String },
+			success: Schema.Array(FileLock),
 			error: LoreErrors
 		})
 	)
