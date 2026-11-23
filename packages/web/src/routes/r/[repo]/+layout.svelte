@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { goto, refreshAll } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import Composition from '#lib/Composition.svelte';
 	import Select from '#lib/Select.svelte';
 	import { withRef } from '#lib/links.ts';
-	import { watchRepository } from '#lib/live.ts';
+	import { REPOSITORY_DATA, watchRepository } from '#lib/live.ts';
 	import type { LayoutProps } from './$types';
 
 	let { children, data }: LayoutProps = $props();
@@ -38,7 +38,7 @@
 
 	function refreshSoon() {
 		clearTimeout(pending);
-		pending = setTimeout(() => void refreshAll(), 300);
+		pending = setTimeout(() => void invalidate(REPOSITORY_DATA, true), 300);
 	}
 
 	$effect(() => {

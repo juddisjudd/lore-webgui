@@ -1,5 +1,7 @@
 import { eventsPath } from '@lore-webui/api';
 
+export const REPOSITORY_DATA = 'lore:repository';
+
 const RECONNECT_MS = 5000;
 // The gateway pings every 8 seconds; a proxy can hold a dead stream open without telling the browser.
 const SILENCE_MS = 20000;

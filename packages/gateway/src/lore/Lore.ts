@@ -57,6 +57,8 @@ export interface LoreService {
 	readonly content: (repo: string, address: string, request?: ContentRequest) => Effect.Effect<Response, LoreError>
 }
 
+const REVISION_CACHE_CAPACITY = 4096
+
 const compressionNames: Record<CompressionMode, string | null> = {
 	[CompressionMode.NOT_SPECIFIED]: null,
 	[CompressionMode.NO_COMPRESSION]: "none",
@@ -205,14 +207,31 @@ const make = Effect.gen(function* () {
 		return convert.branch(branch)
 	})
 
-	const revisionInfo = (repoId: Uint8Array, sig: Uint8Array) =>
-		call((signal) => thin.revisionInfo({ query: { case: "signature", value: sig } }, scope(repoId, signal))).pipe(
-			Effect.flatMap(({ revision }) =>
-				revision
-					? Effect.succeed(convert.revision(revision))
-					: Effect.fail(new ApiError.NotFound({ message: `Revision ${convert.toHex(sig)} not found` }))
+	// Signatures are content hashes, so a found revision never changes; the key names the upstream caller so access stays per user.
+	const revisionCache = yield* Cache.makeWith(
+		(key: string) => {
+			const [, repoHex = "", sigHex = ""] = key.split(":")
+			const repoId = convert.fromHex(repoHex) ?? new Uint8Array(0)
+			const sig = convert.fromHex(sigHex) ?? new Uint8Array(0)
+			return call((signal) => thin.revisionInfo({ query: { case: "signature", value: sig } }, scope(repoId, signal))).pipe(
+				Effect.flatMap(({ revision }) =>
+					revision
+						? Effect.succeed(convert.revision(revision))
+						: Effect.fail(new ApiError.NotFound({ message: `Revision ${sigHex} not found` }))
+				)
 			)
-		)
+		},
+		{
+			capacity: REVISION_CACHE_CAPACITY,
+			timeToLive: (exit) => (Exit.isSuccess(exit) ? Duration.infinity : Duration.zero)
+		}
+	)
+
+	const revisionInfo = (repoId: Uint8Array, sig: Uint8Array) =>
+		Effect.flatMap(Effect.service(CurrentUser), (viewer) => {
+			const caller = Option.isSome(authorization) ? "" : (viewer?.user.username ?? "")
+			return Cache.get(revisionCache, `${caller}:${convert.toHex(repoId)}:${convert.toHex(sig)}`)
+		})
 
 	const revision = Effect.fn("Lore.revision")(function* (repo: string, sig: string) {
 		return yield* revisionInfo(yield* id(repo, "repository id"), yield* signature(sig))

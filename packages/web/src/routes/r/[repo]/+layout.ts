@@ -1,8 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { attempt, load as request } from '#lib/api.ts';
+import { REPOSITORY_DATA } from '#lib/live.ts';
 import type { LayoutLoad } from './$types';
 
-export const load: LayoutLoad = async ({ params, url }) => {
+export const load: LayoutLoad = async ({ params, url, depends }) => {
+	depends(REPOSITORY_DATA);
 	const [repo, branches] = await Promise.all([
 		request((client) => client.repositories.get({ params: { repo: params.repo } })),
 		request((client) => client.branches.list({ params: { repo: params.repo }, query: {} }))

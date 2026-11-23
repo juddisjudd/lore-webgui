@@ -1,7 +1,7 @@
 import { BunHttpServer, BunRuntime } from "@effect/platform-bun"
 import { LoreApi } from "@lore-webui/api"
 import { Effect, Layer, Option } from "effect"
-import { HttpRouter, HttpServerResponse, HttpStaticServer } from "effect/http"
+import { HttpRouter } from "effect/http"
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api"
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
@@ -11,10 +11,9 @@ import { Settings } from "./config.ts"
 import { ContentRoutes } from "./http/content.ts"
 import { EventRoutes } from "./http/events.ts"
 import { ApiHandlers } from "./http/handlers.ts"
+import { SPA_INDEX, staticRoutes } from "./http/static.ts"
 import { Lore } from "./lore/Lore.ts"
 import { Stats } from "./lore/Stats.ts"
-
-const SPA_INDEX = "200.html"
 
 const ApiRoutes = HttpApiBuilder.layer(LoreApi, { openapiPath: "/api/openapi.json" }).pipe(Layer.provide(ApiHandlers))
 
@@ -29,11 +28,7 @@ const StaticRoutes = Layer.unwrap(
 			return Layer.empty
 		}
 		yield* Effect.logInfo(`Serving web UI from ${root}`)
-		const shell = HttpServerResponse.file(join(root, SPA_INDEX), { contentType: "text/html; charset=utf-8" })
-		return Layer.mergeAll(
-			HttpStaticServer.layer({ root, spa: true, index: SPA_INDEX }),
-			HttpRouter.add("GET", "/r/*", shell)
-		)
+		return staticRoutes(root)
 	})
 )
 
